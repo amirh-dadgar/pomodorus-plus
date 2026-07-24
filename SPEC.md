@@ -62,4 +62,4 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 
 ## Environment
 
-- Local dev against a Convex dev deployment. Vercel deployment deferred.
+- Local dev against a Convex dev deployment. Production: Vercel + Convex production deployment (see `DEPLOY.md`).
