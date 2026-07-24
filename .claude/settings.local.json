@@ -38,7 +38,23 @@
       "Bash(git commit -m ' *)",
       "Bash(python3 -c \"import playwright\")",
       "Bash(node -e \"require.resolve\\('playwright'\\)\")",
-      "Bash(node verify-notifs.mjs)"
+      "Bash(node verify-notifs.mjs)",
+      "Bash(mv .env.local /tmp/env.local.bak && npm run build 2>&1 | tail -3; grep -rl \"tacit-clam-994\" .next/static 2>/dev/null | head -2; mv /tmp/env.local.bak .env.local && echo \"env.local restored\")",
+      "Bash(npx shadcn *)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' http://localhost:3111/)",
+      "Bash(curl -sk -o /dev/null -w '%{http_code}\\\\n' https://localhost:3000/)",
+      "Bash(chromium-cli --help)",
+      "Read(//root/.cache/ms-playwright/**)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(python3 -c 'import playwright; print\\(\"py-playwright\"\\)')",
+      "Read(//root/.cache/ms-playwright/chromium-1228/**)",
+      "Bash(PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm i --no-save playwright)",
+      "Bash(node /tmp/ui-check.mjs)",
+      "Bash(node /root/pomodorus/.ui-check.mjs)",
+      "Bash(lsof -ti:3111 -sTCP:LISTEN)",
+      "Bash(xargs -r kill)",
+      "Bash(git -C /root/pomodorus status --short)",
+      "Bash(git -C /root/pomodorus diff .claude/settings.local.json)"
     ]
   }
 }

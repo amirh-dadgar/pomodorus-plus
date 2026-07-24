@@ -13,7 +13,7 @@ export function AppHeader() {
   const username = useQuery(api.profiles.me);
 
   return (
-    <header className="mx-auto flex w-full max-w-md items-center justify-between p-6 pb-0">
+    <header className="mx-auto flex w-full max-w-lg items-center justify-between p-6 pb-0">
       <Link href="/" className="font-bold tracking-tight">
         {copy.app.name}
       </Link>

@@ -8,7 +8,7 @@ import { copy, t } from "@/lib/copy";
 import { faClock, faDigits, faDuration } from "@/lib/format";
 import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
-import { Feed } from "@/components/feed";
+import { Play, SkipForward, X } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 
 type Running = {
@@ -110,9 +110,9 @@ export function TimerApp() {
   const cycleDots = Array.from({ length: 4 }, (_, i) => i < Math.min(state.cycleCount, 4));
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center gap-10 p-6">
+    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center p-6">
       {running && remainingMs !== null ? (
-        <section className="flex w-full flex-col items-center gap-6 pt-10">
+        <section className="flex w-full flex-col items-center gap-6">
           <p className="text-muted-foreground">
             {running.kind === "work"
               ? running.categoryName ?? copy.timer.privateTask
@@ -131,16 +131,18 @@ export function TimerApp() {
           </div>
           {running.kind === "work" ? (
             <Button variant="outline" onClick={() => cancelWork().catch(() => {})}>
+              <X />
               {copy.timer.cancelWork}
             </Button>
           ) : (
             <Button variant="outline" onClick={() => skipBreak().catch(() => {})}>
+              <SkipForward />
               {copy.timer.skipBreak}
             </Button>
           )}
         </section>
       ) : (
-        <section className="flex w-full flex-col items-center gap-6 pt-10">
+        <section className="flex w-full flex-col items-center gap-6">
           <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
           <div className="flex gap-2" dir="ltr">
             {([25, 55] as const).map((m) => (
@@ -183,6 +185,7 @@ export function TimerApp() {
               }
             }}
           >
+            <Play />
             {copy.timer.start}
           </Button>
           <p className="text-sm text-muted-foreground">
@@ -195,8 +198,6 @@ export function TimerApp() {
           </p>
         </section>
       )}
-
-      <Feed now={now} />
     </div>
   );
 }

@@ -10,7 +10,7 @@ export function Profile({ username }: { username: string }) {
   const profile = useQuery(api.profiles.byUsername, { username });
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col p-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col p-6">
       <header className="flex items-center justify-between">
         <Link href="/" className="font-bold tracking-tight">
           {copy.app.name}

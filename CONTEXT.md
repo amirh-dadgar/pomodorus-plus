@@ -33,6 +33,10 @@ _Avoid_: history page (the profile subsumed it), account page
 
 ### Timer
 
+**Category**:
+A user-defined label attached to work sessions (e.g. "درس", "کار"). Public categories show their name in the feed; private ones show as a private task. Owned by one user; not shared. User-facing copy calls it "تسک" (casual register, like "چیل" for break); code and docs say category.
+_Avoid_: task, tag, project (in code and docs)
+
 **Session**:
 One timed run — work or break — with a nominal duration. Server-authoritative; completes when its end time passes.
 
