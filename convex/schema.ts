@@ -1,0 +1,46 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
+
+export default defineSchema({
+  ...authTables,
+
+  categories: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    isPublic: v.boolean(),
+  }).index("by_user", ["userId"]),
+
+  sessions: defineTable({
+    userId: v.id("users"),
+    kind: v.union(v.literal("work"), v.literal("shortBreak"), v.literal("longBreak")),
+    categoryId: v.optional(v.id("categories")),
+    startedAt: v.number(),
+    durationMs: v.number(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("canceled"),
+      v.literal("skipped"),
+    ),
+  })
+    .index("by_status", ["status"])
+    .index("by_user_status", ["userId", "status"]),
+
+  // Cycle counter for the 4-session pomodoro rhythm.
+  userStats: defineTable({
+    userId: v.id("users"),
+    cycleCount: v.number(),
+    // Last time a session/break ended — used for the 1h idle reset.
+    lastActivityAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // Daily aggregates (Tehran-local day), independent of categories so
+  // deleting a category never erases history.
+  dailyStats: defineTable({
+    userId: v.id("users"),
+    dayKey: v.string(), // "YYYY-MM-DD" in Asia/Tehran (UTC+3:30)
+    totalMs: v.number(),
+    sessionCount: v.number(),
+  }).index("by_user_day", ["userId", "dayKey"]),
+});

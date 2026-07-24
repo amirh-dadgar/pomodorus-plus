@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//tmp/**)",
+      "Bash(npx -y create-next-app@latest pomodorus-scaffold --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --use-npm --no-turbopack --skip-install --yes)",
+      "Bash(rm -rf /tmp/pomodorus-scaffold/.git)",
+      "Bash(cp -rT /tmp/pomodorus-scaffold /root/pomodorus)",
+      "Bash(rm -rf /tmp/pomodorus-scaffold)",
+      "Bash(npm install *)",
+      "Bash(npx -y shadcn@latest init -y -b neutral --no-src-dir)",
+      "Bash(npx -y shadcn@latest add button input label dialog switch -y)",
+      "Bash(npx -y shadcn@latest init --yes --base-color neutral)",
+      "Bash(npx -y shadcn@latest add button input label dialog switch --yes)",
+      "Bash(npx -y shadcn@latest init --help)",
+      "Bash(npx -y shadcn@latest init -b radix --rtl --yes)",
+      "Bash(npx convex *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(chromium-cli --session pomodorus)",
+      "Bash(npm ls *)",
+      "Read(//root/.cache/**)",
+      "Bash(node -e \"console.log\\(require.resolve\\('playwright'\\)\\)\")",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(gh api *)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Initial commit: Pomodorus — Next.js + Convex pomodoro app *)"
+    ]
+  }
+}
