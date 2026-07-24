@@ -59,7 +59,9 @@ export function CategoryPicker({
   async function createFromSearch() {
     const trimmed = search.trim();
     if (!trimmed) return;
-    const id = await create({ name: trimmed, isPublic: true }).catch(() => null);
+    const id = await create({ name: trimmed, isPublic: true }).catch(
+      () => null,
+    );
     if (id) {
       onSelect(id);
       closeAndReset();
@@ -72,7 +74,7 @@ export function CategoryPicker({
         variant="outline"
         role="combobox"
         aria-expanded={open}
-        className="w-64 justify-between"
+        className="w-full justify-between"
         onClick={() => setOpen(true)}
       >
         <span className="truncate">
@@ -86,7 +88,9 @@ export function CategoryPicker({
               )}
             </>
           ) : (
-            <span className="text-muted-foreground">{copy.categories.pick}</span>
+            <span className="text-muted-foreground">
+              {copy.categories.pick}
+            </span>
           )}
         </span>
         <ChevronsUpDown className="opacity-50" />
@@ -102,40 +106,54 @@ export function CategoryPicker({
           }
         }}
       >
-        <DialogContent className="sm:max-w-xs">
+        <DialogContent className="sm:max-w-lg">
           {view.name === "picker" && (
             <>
               <DialogHeader>
                 <DialogTitle>{copy.categories.pick}</DialogTitle>
               </DialogHeader>
               <Command className="bg-transparent p-0">
-                <CommandInput
-                  autoFocus
-                  placeholder={copy.categories.search}
-                  value={search}
-                  onValueChange={setSearch}
-                />
+                <div className="mb-2">
+                  <CommandInput
+                    autoFocus
+                    placeholder={copy.categories.search}
+                    value={search}
+                    onValueChange={setSearch}
+                  />
+                </div>
+
                 <CommandList>
                   <CommandEmpty>
-                    <Button size="sm" variant="outline" onClick={createFromSearch}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={createFromSearch}
+                    >
                       <Plus />
                       <span className="truncate">
-                        {t(copy.categories.createNamed, { name: search.trim() })}
+                        {t(copy.categories.createNamed, {
+                          name: search.trim(),
+                        })}
                       </span>
                     </Button>
                   </CommandEmpty>
-                  <CommandGroup>
+                  <CommandGroup className="p-2 border">
                     {categories.map((category) => (
                       <CommandItem
                         key={category._id}
                         value={category.name}
+                        className="[&>svg:last-child]:hidden"
                         onSelect={() => {
                           onSelect(category._id);
                           closeAndReset();
                         }}
                       >
                         <Check
-                          className={selected === category._id ? "opacity-100" : "opacity-0"}
+                          className={
+                            selected === category._id
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }
                         />
                         <span className="flex-1 truncate">{category.name}</span>
                         {!category.isPublic && (
@@ -145,8 +163,10 @@ export function CategoryPicker({
                         )}
                         <button
                           type="button"
-                          aria-label={t(copy.categories.editAria, { name: category.name })}
-                          className="rounded-sm p-1 text-muted-foreground hover:text-foreground"
+                          aria-label={t(copy.categories.editAria, {
+                            name: category.name,
+                          })}
+                          className="rounded-none p-1 text-muted-foreground hover:text-foreground"
                           onClick={(e) => {
                             e.stopPropagation();
                             setView({ name: "edit", category });
@@ -157,9 +177,11 @@ export function CategoryPicker({
                       </CommandItem>
                     ))}
                   </CommandGroup>
-                  <CommandSeparator alwaysRender />
-                  <CommandGroup forceMount>
-                    <CommandItem forceMount onSelect={() => setView({ name: "create" })}>
+                  <CommandGroup forceMount className="mt-2">
+                    <CommandItem
+                      forceMount
+                      onSelect={() => setView({ name: "create" })}
+                    >
                       <Plus />
                       {copy.categories.new}
                     </CommandItem>
@@ -244,7 +266,11 @@ function CreateView({
           <Label htmlFor="new-public" className="text-sm text-muted-foreground">
             {copy.categories.publicLabel}
           </Label>
-          <Switch id="new-public" checked={isPublic} onCheckedChange={setIsPublic} />
+          <Switch
+            id="new-public"
+            checked={isPublic}
+            onCheckedChange={setIsPublic}
+          />
         </div>
         <div className="flex gap-2">
           <Button size="sm" onClick={handleCreate} disabled={!name.trim()}>
@@ -285,17 +311,28 @@ function EditView({
           onChange={(e) => setName(e.target.value)}
         />
         <div className="flex items-center justify-between">
-          <Label htmlFor={`public-${category._id}`} className="text-sm text-muted-foreground">
+          <Label
+            htmlFor={`public-${category._id}`}
+            className="text-sm text-muted-foreground"
+          >
             {copy.categories.publicLabel}
           </Label>
-          <Switch id={`public-${category._id}`} checked={isPublic} onCheckedChange={setIsPublic} />
+          <Switch
+            id={`public-${category._id}`}
+            checked={isPublic}
+            onCheckedChange={setIsPublic}
+          />
         </div>
         <div className="flex justify-between gap-2">
           <Button
             size="sm"
             disabled={!name.trim()}
             onClick={async () => {
-              await update({ id: category._id, name: name.trim(), isPublic }).catch(() => {});
+              await update({
+                id: category._id,
+                name: name.trim(),
+                isPublic,
+              }).catch(() => {});
               onBack();
             }}
           >

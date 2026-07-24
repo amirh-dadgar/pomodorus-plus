@@ -8,7 +8,7 @@ import { copy, t } from "@/lib/copy";
 import { faClock, faDigits, faDuration } from "@/lib/format";
 import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
-import { Play, SkipForward, X } from "lucide-react";
+import { Minus, Play, Plus, SkipForward, X } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 
 type Running = {
@@ -25,9 +25,7 @@ const KIND_LABEL: Record<Running["kind"], string> = {
   longBreak: copy.timer.kindLongBreak,
 };
 
-// Dev-only: a 3s session that's stored/credited as a full 25 minutes.
-const SHOW_FAST_OPTION = process.env.NODE_ENV === "development";
-type DurationChoice = 25 | 55 | "fast";
+type DurationChoice = 25 | 55;
 
 export function TimerApp() {
   const state = useQuery(api.sessions.myState);
@@ -102,12 +100,19 @@ export function TimerApp() {
   }, [state, lastEnded]);
 
   if (state === undefined) {
-    return <div className="flex flex-1 items-center justify-center text-muted-foreground">…</div>;
+    return (
+      <div className="flex flex-1 items-center justify-center text-muted-foreground">
+        …
+      </div>
+    );
   }
   if (state === null) return null;
 
   // cycleCount stays at 4 during the long break, then resets to 0.
-  const cycleDots = Array.from({ length: 4 }, (_, i) => i < Math.min(state.cycleCount, 4));
+  const cycleDots = Array.from(
+    { length: 4 },
+    (_, i) => i < Math.min(state.cycleCount, 4),
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center p-6">
@@ -115,91 +120,99 @@ export function TimerApp() {
         <section className="flex w-full flex-col items-center gap-6">
           <p className="text-muted-foreground">
             {running.kind === "work"
-              ? running.categoryName ?? copy.timer.privateTask
+              ? (running.categoryName ?? copy.timer.privateTask)
               : KIND_LABEL[running.kind]}
           </p>
-          <p className="font-mono text-7xl font-bold tabular-nums tracking-tight" dir="ltr">
+          <p
+            className="font-mono text-7xl font-bold tabular-nums tracking-tight"
+            dir="ltr"
+          >
             {faClock(remainingMs)}
           </p>
-          <div className="flex gap-2" title={t(copy.timer.cycleTitle, { n: faDigits(state.cycleCount) })}>
+          <div
+            className="flex gap-2"
+            title={t(copy.timer.cycleTitle, { n: faDigits(state.cycleCount) })}
+          >
             {cycleDots.map((filled, i) => (
               <span
                 key={i}
-                className={`h-2 w-2 rounded-full ${filled ? "bg-foreground" : "bg-muted"}`}
+                className={`h-2 w-2 rounded-none ${filled ? "bg-foreground" : "bg-muted"}`}
               />
             ))}
           </div>
           {running.kind === "work" ? (
-            <Button variant="outline" onClick={() => cancelWork().catch(() => {})}>
+            <Button
+              variant="outline"
+              onClick={() => cancelWork().catch(() => {})}
+            >
               <X />
               {copy.timer.cancelWork}
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => skipBreak().catch(() => {})}>
+            <Button
+              variant="outline"
+              onClick={() => skipBreak().catch(() => {})}
+            >
               <SkipForward />
               {copy.timer.skipBreak}
             </Button>
           )}
         </section>
       ) : (
-        <section className="flex w-full flex-col items-center gap-6">
-          <p className="font-mono text-7xl font-bold tabular-nums tracking-tight" dir="ltr">
-            {faClock(choice === "fast" ? 3_000 : choice * 60_000)}
-          </p>
+        <div className="w-full grid gap-5">
           <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
-          <div className="flex gap-2" dir="ltr">
-            {([25, 55] as const).map((m) => (
+
+          <section className="flex w-full flex-col border p-10 items-center gap-6">
+            <div className="flex items-center gap-4" dir="ltr">
               <Button
-                key={m}
-                variant={choice === m ? "default" : "outline"}
-                size="sm"
-                onClick={() => setChoice(m)}
+                variant="outline"
+                size="icon"
+                disabled={choice === 25}
+                onClick={() => setChoice(25)}
               >
-                {t(copy.timer.minutes, { m: faDigits(m) })}
+                <Minus className="size-4" />
               </Button>
-            ))}
-            {SHOW_FAST_OPTION && (
+              <p className="font-mono text-7xl font-bold tabular-nums tracking-tight">
+                {faClock(choice * 60_000)}
+              </p>
               <Button
-                variant={choice === "fast" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setChoice("fast")}
+                variant="outline"
+                size="icon"
+                disabled={choice === 55}
+                onClick={() => setChoice(55)}
               >
-                {copy.timer.fastOption}
+                <Plus className="size-4" />
               </Button>
-            )}
-          </div>
-          <Button
-            size="lg"
-            className="w-40"
-            disabled={categoryId === null}
-            onClick={() => {
-              // User gesture: the only moment browsers reliably allow the
-              // permission prompt and unlocking audio playback.
-              unlockAudio();
-              if ("Notification" in window && Notification.permission === "default") {
-                Notification.requestPermission();
-              }
-              if (categoryId !== null) {
-                startWork({
-                  categoryId,
-                  minutes: choice === "fast" ? 25 : choice,
-                  ...(choice === "fast" ? { fast: true } : {}),
-                }).catch(() => {});
-              }
-            }}
-          >
-            <Play />
-            {copy.timer.start}
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            {state.todayCount > 0
-              ? t(copy.timer.todaySummary, {
-                  count: faDigits(state.todayCount),
-                  duration: faDuration(state.todayMs),
-                })
-              : copy.timer.todayEmpty}
-          </p>
-        </section>
+            </div>
+            <Button
+              size="lg"
+              className="w-40"
+              disabled={categoryId === null}
+              onClick={() => {
+                // User gesture: the only moment browsers reliably allow the
+                // permission prompt and unlocking audio playback.
+                unlockAudio();
+                if (
+                  "Notification" in window &&
+                  Notification.permission === "default"
+                ) {
+                  Notification.requestPermission();
+                }
+                if (categoryId !== null) {
+                  const isDev = process.env.NODE_ENV === "development";
+                  startWork({
+                    categoryId,
+                    minutes: choice,
+                    ...(isDev ? { fast: true } : {}),
+                  }).catch(() => {});
+                }
+              }}
+            >
+              <Play />
+              {copy.timer.start}
+            </Button>
+          </section>
+        </div>
       )}
     </div>
   );
