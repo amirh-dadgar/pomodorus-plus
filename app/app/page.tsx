@@ -1,11 +1,11 @@
 import { AppHeader } from "@/components/app-header";
-import { History } from "@/components/history";
+import { TimerApp } from "@/components/timer-app";
 
-export default function HistoryPage() {
+export default function TimerPage() {
   return (
     <main className="flex flex-1 flex-col">
       <AppHeader />
-      <History />
+      <TimerApp />
     </main>
   );
 }

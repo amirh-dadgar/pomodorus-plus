@@ -6,13 +6,14 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 
 - Next.js (App Router, TypeScript) + Tailwind + shadcn/ui
 - Convex (database, realtime, server functions)
-- Convex Auth — Password provider only. No email verification, no password reset, no email infrastructure. Email is effectively a username.
-- Signup fields: email, password, **display name** (shown publicly in the feed).
+- Convex Auth — Password provider only. No email verification, no password reset, no email infrastructure. Email is the private login identifier and is never shown publicly.
+- Signup fields: email, password, **display name** (shown publicly in the feed), **username** (unique, immutable, `[a-z0-9_]{3,20}`; used in public profile URLs).
 
 ## Look & language
 
 - Single hard-coded theme: pitch black `#000000` background, white text, monochrome. No theme toggle.
-- Entire UI in Persian, RTL, Vazirmatn font.
+- Entire UI in Persian, RTL, local Peyda (FaNum) font.
+- Copy voice: extremely casual Gen-Z Persian (colloquial spelling, loanwords like فوکوس/چیل). Applies to all user-facing text including server error messages. All copy is centralized in `lib/copy.json`.
 - Persian digits everywhere (e.g. ۲۵:۰۰) and Jalali (Shamsi) dates, via `Intl` with `fa-IR-u-ca-persian`.
 - App name: **Pomodorus**.
 
@@ -34,17 +35,23 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 - Created inline in the start-screen picker; rename, visibility toggle, and delete supported.
 - Cannot delete/edit a category while a session is running on it. Deleting keeps past focus time (history stores daily aggregates independent of category).
 
+## Pages & routing
+
+- `/` — public landing (no auth): app name, one-line pitch, the live feed, and a header button (signed-in → `/app`, signed-out → `/login`).
+- `/app` — the timer app (auth required).
+- `/u/[username]` — public profile (no auth): display name, username, and daily focus history (Jalali date + focus time per day, newest first). Only completed work sessions count.
+- There is no separate private history page; a user's own profile serves that purpose.
+
 ## Global feed
 
-- One global feed visible to all signed-in users.
-- Shows users currently **working**: display name + category name + remaining time. Private category → «در حال کار روی تسک خصوصی».
-- Shows users currently **on break**: display name + «استراحت».
-- Idle users don't appear.
+- One global feed, publicly visible (landing page and inside the app).
+- Shows users currently **working**: display name (linked to their profile) + category name + remaining time. Private category → shown as a private task, name hidden.
+- Shows users currently **on break**: display name + break label.
+- Idle users don't appear. Empty feed shows an "everybody's offline" message.
 
-## History
+## Dev fast mode
 
-- Private per-user page: daily rows, newest first — Jalali date, total focus minutes, completed session count.
-- Only completed work sessions count.
+- With the `DEV_FAST_POMODORO` env var set on the (dev) Convex deployment, the start screen (dev builds only) offers a 3-second test session: stored and credited as a full 25 minutes (`devFast: true` on the row), but finalized after 3s. Its auto-breaks also run in 3s while stored at nominal duration. The mutation rejects the fast flag when the env var is absent.
 
 ## Notifications
 

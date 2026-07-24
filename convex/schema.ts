@@ -5,6 +5,22 @@ import { authTables } from "@convex-dev/auth/server";
 export default defineSchema({
   ...authTables,
 
+  // authTables.users plus `username`: the unique, immutable public handle
+  // used in profile URLs (/u/[username]).
+  users: defineTable({
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    username: v.optional(v.string()),
+  })
+    .index("email", ["email"])
+    .index("phone", ["phone"])
+    .index("by_username", ["username"]),
+
   categories: defineTable({
     userId: v.id("users"),
     name: v.string(),
@@ -23,6 +39,9 @@ export default defineSchema({
       v.literal("canceled"),
       v.literal("skipped"),
     ),
+    // Dev-only fast session: stored/credited at the nominal duration above,
+    // but the finalize job fires after seconds instead.
+    devFast: v.optional(v.boolean()),
   })
     .index("by_status", ["status"])
     .index("by_user_status", ["userId", "status"]),

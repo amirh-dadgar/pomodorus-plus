@@ -28,7 +28,14 @@
       "Bash(git init *)",
       "Bash(git config *)",
       "Bash(git add *)",
-      "Bash(git commit -m 'Initial commit: Pomodorus — Next.js + Convex pomodoro app *)"
+      "Bash(git commit -m 'Initial commit: Pomodorus — Next.js + Convex pomodoro app *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(python3 -)",
+      "Bash(tail -30 /tmp/nextdev.log)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

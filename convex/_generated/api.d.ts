@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as categories from "../categories.js";
 import type * as http from "../http.js";
+import type * as profiles from "../profiles.js";
 import type * as sessions from "../sessions.js";
 
 import type {
@@ -23,6 +24,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   categories: typeof categories;
   http: typeof http;
+  profiles: typeof profiles;
   sessions: typeof sessions;
 }>;
 

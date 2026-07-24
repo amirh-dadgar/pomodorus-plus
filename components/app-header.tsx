@@ -1,27 +1,26 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useQuery } from "convex/react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { api } from "@/convex/_generated/api";
+import { copy } from "@/lib/copy";
 
 export function AppHeader() {
   const { signOut } = useAuthActions();
-  const pathname = usePathname();
   const router = useRouter();
+  const username = useQuery(api.profiles.me);
 
   return (
     <header className="mx-auto flex w-full max-w-md items-center justify-between p-6 pb-0">
       <Link href="/" className="font-bold tracking-tight">
-        Pomodorus
+        {copy.app.name}
       </Link>
       <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-        {pathname === "/history" ? (
-          <Link href="/" className="hover:text-foreground">
-            تایمر
-          </Link>
-        ) : (
-          <Link href="/history" className="hover:text-foreground">
-            تاریخچه
+        {username && (
+          <Link href={`/u/${username}`} className="hover:text-foreground">
+            {copy.header.myProfile}
           </Link>
         )}
         <button
@@ -29,10 +28,10 @@ export function AppHeader() {
           className="hover:text-foreground"
           onClick={async () => {
             await signOut();
-            router.push("/login");
+            router.push("/");
           }}
         >
-          خروج
+          {copy.header.signOut}
         </button>
       </nav>
     </header>

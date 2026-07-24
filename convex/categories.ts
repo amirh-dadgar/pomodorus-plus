@@ -2,28 +2,29 @@ import { v, ConvexError } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import copy from "../lib/copy.json";
 
 function validateName(name: string) {
   const trimmed = name.trim();
   if (trimmed.length < 1 || trimmed.length > 40) {
-    throw new ConvexError("نام دسته‌بندی باید بین ۱ تا ۴۰ حرف باشد");
+    throw new ConvexError(copy.errors.categoryNameLength);
   }
   return trimmed;
 }
 
 async function requireOwnCategory(ctx: MutationCtx, id: Id<"categories">) {
   const userId = await getAuthUserId(ctx);
-  if (userId === null) throw new ConvexError("ابتدا وارد شوید");
+  if (userId === null) throw new ConvexError(copy.errors.signInFirst);
   const category = await ctx.db.get(id);
   if (!category || category.userId !== userId) {
-    throw new ConvexError("دسته‌بندی پیدا نشد");
+    throw new ConvexError(copy.errors.categoryNotFound);
   }
   const running = await ctx.db
     .query("sessions")
     .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "running"))
     .unique();
   if (running?.categoryId === id) {
-    throw new ConvexError("در حین جلسه نمی‌توان این دسته‌بندی را تغییر داد");
+    throw new ConvexError(copy.errors.categoryBusy);
   }
   return category;
 }
@@ -44,7 +45,7 @@ export const create = mutation({
   args: { name: v.string(), isPublic: v.boolean() },
   handler: async (ctx, { name, isPublic }) => {
     const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new ConvexError("ابتدا وارد شوید");
+    if (userId === null) throw new ConvexError(copy.errors.signInFirst);
     return await ctx.db.insert("categories", {
       userId,
       name: validateName(name),

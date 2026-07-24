@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import { copy, t } from "@/lib/copy";
 import { faClock, faDigits, faDuration } from "@/lib/format";
 import { CategoryPicker } from "@/components/category-picker";
 import { Feed } from "@/components/feed";
@@ -18,10 +19,14 @@ type Running = {
 };
 
 const KIND_LABEL: Record<Running["kind"], string> = {
-  work: "تمرکز",
-  shortBreak: "استراحت",
-  longBreak: "استراحت طولانی",
+  work: copy.timer.kindWork,
+  shortBreak: copy.timer.kindShortBreak,
+  longBreak: copy.timer.kindLongBreak,
 };
+
+// Dev-only: a 3s session that's stored/credited as a full 25 minutes.
+const SHOW_FAST_OPTION = process.env.NODE_ENV === "development";
+type DurationChoice = 25 | 55 | "fast";
 
 export function TimerApp() {
   const state = useQuery(api.sessions.myState);
@@ -31,7 +36,7 @@ export function TimerApp() {
 
   const [now, setNow] = useState(() => Date.now());
   const [categoryId, setCategoryId] = useState<Id<"categories"> | null>(null);
-  const [minutes, setMinutes] = useState<25 | 55>(25);
+  const [choice, setChoice] = useState<DurationChoice>(25);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 500);
@@ -56,27 +61,35 @@ export function TimerApp() {
     document.title =
       running && remainingMs !== null
         ? `${faClock(remainingMs)} — ${KIND_LABEL[running.kind]}`
-        : "Pomodorus";
+        : copy.app.name;
     return () => {
-      document.title = "Pomodorus";
+      document.title = copy.app.name;
     };
   }, [running, remainingMs]);
 
   // Notify when a phase ends naturally (not on cancel/skip: those end with
-  // plenty of time left, a natural end has ~0 remaining).
+  // plenty of time left, a natural end has ~0 remaining). Fast dev sessions
+  // end with almost their whole nominal duration left, so let those through.
   const prevRunning = useRef<Running | null>(null);
   useEffect(() => {
     const prev = prevRunning.current;
     prevRunning.current = running;
     if (!prev || prev.id === running?.id) return;
     const endedNaturally = prev.startedAt + prev.durationMs - Date.now() <= 2000;
-    if (!endedNaturally || !("Notification" in window) || Notification.permission !== "granted") {
+    const fastHandoff = SHOW_FAST_OPTION && running !== null;
+    if (
+      (!endedNaturally && !fastHandoff) ||
+      !("Notification" in window) ||
+      Notification.permission !== "granted"
+    ) {
       return;
     }
     if (prev.kind === "work") {
-      new Notification("پومودورو تمام شد", { body: "استراحت شروع شد." });
+      new Notification(copy.notifications.workDoneTitle, { body: copy.notifications.workDoneBody });
     } else {
-      new Notification("استراحت تمام شد", { body: "آماده‌ی جلسه بعدی؟" });
+      new Notification(copy.notifications.breakDoneTitle, {
+        body: copy.notifications.breakDoneBody,
+      });
     }
   }, [running]);
 
@@ -93,12 +106,14 @@ export function TimerApp() {
       {running && remainingMs !== null ? (
         <section className="flex w-full flex-col items-center gap-6 pt-10">
           <p className="text-muted-foreground">
-            {running.kind === "work" ? running.categoryName ?? "تسک خصوصی" : KIND_LABEL[running.kind]}
+            {running.kind === "work"
+              ? running.categoryName ?? copy.timer.privateTask
+              : KIND_LABEL[running.kind]}
           </p>
           <p className="font-mono text-7xl font-bold tabular-nums tracking-tight" dir="ltr">
             {faClock(remainingMs)}
           </p>
-          <div className="flex gap-2" title={`${faDigits(state.cycleCount)} از ۴ جلسه`}>
+          <div className="flex gap-2" title={t(copy.timer.cycleTitle, { n: faDigits(state.cycleCount) })}>
             {cycleDots.map((filled, i) => (
               <span
                 key={i}
@@ -108,11 +123,11 @@ export function TimerApp() {
           </div>
           {running.kind === "work" ? (
             <Button variant="outline" onClick={() => cancelWork().catch(() => {})}>
-              لغو جلسه
+              {copy.timer.cancelWork}
             </Button>
           ) : (
             <Button variant="outline" onClick={() => skipBreak().catch(() => {})}>
-              رد کردن استراحت
+              {copy.timer.skipBreak}
             </Button>
           )}
         </section>
@@ -123,13 +138,22 @@ export function TimerApp() {
             {([25, 55] as const).map((m) => (
               <Button
                 key={m}
-                variant={minutes === m ? "default" : "outline"}
+                variant={choice === m ? "default" : "outline"}
                 size="sm"
-                onClick={() => setMinutes(m)}
+                onClick={() => setChoice(m)}
               >
-                {faDigits(m)} دقیقه
+                {t(copy.timer.minutes, { m: faDigits(m) })}
               </Button>
             ))}
+            {SHOW_FAST_OPTION && (
+              <Button
+                variant={choice === "fast" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setChoice("fast")}
+              >
+                {copy.timer.fastOption}
+              </Button>
+            )}
           </div>
           <Button
             size="lg"
@@ -137,16 +161,23 @@ export function TimerApp() {
             disabled={categoryId === null}
             onClick={() => {
               if (categoryId !== null) {
-                startWork({ categoryId, minutes }).catch(() => {});
+                startWork({
+                  categoryId,
+                  minutes: choice === "fast" ? 25 : choice,
+                  ...(choice === "fast" ? { fast: true } : {}),
+                }).catch(() => {});
               }
             }}
           >
-            شروع
+            {copy.timer.start}
           </Button>
           <p className="text-sm text-muted-foreground">
             {state.todayCount > 0
-              ? `امروز: ${faDigits(state.todayCount)} پومودورو — ${faDuration(state.todayMs)}`
-              : "امروز هنوز جلسه‌ای تمام نشده"}
+              ? t(copy.timer.todaySummary, {
+                  count: faDigits(state.todayCount),
+                  duration: faDuration(state.todayMs),
+                })
+              : copy.timer.todayEmpty}
           </p>
         </section>
       )}

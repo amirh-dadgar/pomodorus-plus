@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import Link from "next/link";
 import { api } from "@/convex/_generated/api";
+import { copy } from "@/lib/copy";
 import { faClock } from "@/lib/format";
 
 export function Feed({ now }: { now: number }) {
@@ -9,9 +11,9 @@ export function Feed({ now }: { now: number }) {
 
   return (
     <section className="w-full space-y-3 border-t pt-6">
-      <h2 className="text-sm font-medium text-muted-foreground">در حال حاضر</h2>
+      <h2 className="text-sm font-medium text-muted-foreground">{copy.feed.title}</h2>
       {feed === undefined ? null : feed.length === 0 ? (
-        <p className="text-sm text-muted-foreground">هیچ‌کس در جلسه نیست.</p>
+        <p className="text-sm text-muted-foreground">{copy.feed.empty}</p>
       ) : (
         <ul className="space-y-2">
           {feed.map((entry) => {
@@ -20,13 +22,17 @@ export function Feed({ now }: { now: number }) {
             return (
               <li key={entry.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="truncate">
-                  <span className="font-medium">{entry.name}</span>
-                  {entry.isMe && <span className="text-muted-foreground"> (شما)</span>}
+                  {entry.username ? (
+                    <Link href={`/u/${entry.username}`} className="font-medium hover:underline">
+                      {entry.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">{entry.name}</span>
+                  )}
+                  {entry.isMe && <span className="text-muted-foreground"> {copy.feed.you}</span>}
                   <span className="text-muted-foreground">
                     {" — "}
-                    {isBreak
-                      ? "استراحت"
-                      : entry.label ?? "در حال کار روی تسک خصوصی"}
+                    {isBreak ? copy.feed.onBreak : entry.label ?? copy.feed.privateTask}
                   </span>
                 </span>
                 {!isBreak && (

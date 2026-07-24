@@ -3,6 +3,7 @@ import { internalMutation, mutation, query, type MutationCtx } from "./_generate
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import copy from "../lib/copy.json";
 
 const MINUTE_MS = 60_000;
 export const WORK_MINUTES = [25, 55] as const;
@@ -10,6 +11,12 @@ const SHORT_BREAK_MS = 5 * MINUTE_MS;
 const LONG_BREAK_MS = 20 * MINUTE_MS;
 const SESSIONS_PER_CYCLE = 4;
 const IDLE_RESET_MS = 60 * MINUTE_MS;
+
+// Dev-only fast sessions: stored/credited at their nominal duration, but the
+// finalize job fires after this instead. Gated by the DEV_FAST_POMODORO env
+// var on the deployment so production rejects it.
+const FAST_MS = 3_000;
+const fastAllowed = () => process.env.DEV_FAST_POMODORO !== undefined;
 
 // Day bucket in Asia/Tehran (fixed UTC+3:30, Iran abolished DST in 2022).
 const TEHRAN_OFFSET_MS = 3.5 * 60 * MINUTE_MS;
@@ -19,7 +26,7 @@ function tehranDayKey(ts: number): string {
 
 async function requireUserId(ctx: { auth: MutationCtx["auth"] }) {
   const userId = await getAuthUserId(ctx as MutationCtx);
-  if (userId === null) throw new ConvexError("ابتدا وارد شوید");
+  if (userId === null) throw new ConvexError(copy.errors.signInFirst);
   return userId;
 }
 
@@ -44,20 +51,27 @@ async function getStats(ctx: MutationCtx, userId: Id<"users">) {
   return (await ctx.db.get(id))!;
 }
 
-/** Start a work session on a category (25 or 55 minutes). */
+/** Start a work session on a category (25 or 55 minutes; dev `fast` runs in 3s). */
 export const startWork = mutation({
-  args: { categoryId: v.id("categories"), minutes: v.number() },
-  handler: async (ctx, { categoryId, minutes }) => {
+  args: {
+    categoryId: v.id("categories"),
+    minutes: v.number(),
+    fast: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { categoryId, minutes, fast }) => {
     const userId = await requireUserId(ctx);
     if (!WORK_MINUTES.includes(minutes as (typeof WORK_MINUTES)[number])) {
-      throw new ConvexError("مدت جلسه باید ۲۵ یا ۵۵ دقیقه باشد");
+      throw new ConvexError(copy.errors.badDuration);
+    }
+    if (fast && !fastAllowed()) {
+      throw new ConvexError(copy.errors.fastNotAllowed);
     }
     const category = await ctx.db.get(categoryId);
     if (!category || category.userId !== userId) {
-      throw new ConvexError("دسته‌بندی پیدا نشد");
+      throw new ConvexError(copy.errors.categoryNotFound);
     }
     if (await getRunning(ctx, userId)) {
-      throw new ConvexError("یک جلسه در حال اجراست");
+      throw new ConvexError(copy.errors.alreadyRunning);
     }
 
     const now = Date.now();
@@ -74,8 +88,11 @@ export const startWork = mutation({
       startedAt: now,
       durationMs,
       status: "running",
+      ...(fast ? { devFast: true } : {}),
     });
-    await ctx.scheduler.runAfter(durationMs, internal.sessions.finalize, { sessionId });
+    await ctx.scheduler.runAfter(fast ? FAST_MS : durationMs, internal.sessions.finalize, {
+      sessionId,
+    });
   },
 });
 
@@ -86,7 +103,7 @@ export const cancelWork = mutation({
     const userId = await requireUserId(ctx);
     const running = await getRunning(ctx, userId);
     if (!running || running.kind !== "work") {
-      throw new ConvexError("جلسه‌ای در حال اجرا نیست");
+      throw new ConvexError(copy.errors.nothingRunning);
     }
     await ctx.db.patch(running._id, { status: "canceled" });
   },
@@ -99,7 +116,7 @@ export const skipBreak = mutation({
     const userId = await requireUserId(ctx);
     const running = await getRunning(ctx, userId);
     if (!running || running.kind === "work") {
-      throw new ConvexError("استراحتی در حال اجرا نیست");
+      throw new ConvexError(copy.errors.noBreakRunning);
     }
     await ctx.db.patch(running._id, { status: "skipped" });
     const stats = await getStats(ctx, userId);
@@ -147,7 +164,9 @@ export const finalize = internalMutation({
       const cycleCount = stats.cycleCount + 1;
       await ctx.db.patch(stats._id, { cycleCount, lastActivityAt: now });
 
-      // Auto-start the break (skippable from the UI).
+      // Auto-start the break (skippable from the UI). A fast session's break
+      // is fast too, so the whole cycle can be tested in seconds.
+      const fast = session.devFast === true && fastAllowed();
       const isLong = cycleCount >= SESSIONS_PER_CYCLE;
       const durationMs = isLong ? LONG_BREAK_MS : SHORT_BREAK_MS;
       const breakId = await ctx.db.insert("sessions", {
@@ -156,8 +175,9 @@ export const finalize = internalMutation({
         startedAt: now,
         durationMs,
         status: "running",
+        ...(fast ? { devFast: true } : {}),
       });
-      await ctx.scheduler.runAfter(durationMs, internal.sessions.finalize, {
+      await ctx.scheduler.runAfter(fast ? FAST_MS : durationMs, internal.sessions.finalize, {
         sessionId: breakId,
       });
     } else {
@@ -208,12 +228,11 @@ export const myState = query({
   },
 });
 
-/** Global live feed: everyone working or on break right now. */
+/** Everyone working or on break right now. Public: also feeds the landing page. */
 export const activeFeed = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (userId === null) return [];
     const running = await ctx.db
       .query("sessions")
       .withIndex("by_status", (q) => q.eq("status", "running"))
@@ -230,6 +249,7 @@ export const activeFeed = query({
       feed.push({
         id: session._id,
         name: user.name ?? "",
+        username: user.username ?? null,
         isMe: session.userId === userId,
         kind: session.kind,
         label, // null on work = private task
@@ -239,24 +259,5 @@ export const activeFeed = query({
     }
     feed.sort((a, b) => a.startedAt - b.startedAt);
     return feed;
-  },
-});
-
-/** Daily focus history for the signed-in user, newest first. */
-export const history = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) return [];
-    const days = await ctx.db
-      .query("dailyStats")
-      .withIndex("by_user_day", (q) => q.eq("userId", userId))
-      .order("desc")
-      .take(365);
-    return days.map((d) => ({
-      dayKey: d.dayKey,
-      totalMs: d.totalMs,
-      sessionCount: d.sessionCount,
-    }));
   },
 });
