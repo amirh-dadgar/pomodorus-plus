@@ -35,7 +35,10 @@
       "Bash(tail -30 /tmp/nextdev.log)",
       "Bash(curl -s http://localhost:3000/)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(python3 -c \"import playwright\")",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(node verify-notifs.mjs)"
     ]
   }
 }
