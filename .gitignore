@@ -35,6 +35,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# committed on purpose: only the public production Convex URL
+!.env.production
 
 # vercel
 .vercel

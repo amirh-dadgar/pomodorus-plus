@@ -1,67 +1,53 @@
 # Deploying Pomodorus to production (Vercel + Convex)
 
-Run everything below on your local computer, from a fresh clone of this repo.
+The Convex production side is **already deployed and configured**, so the first Vercel deploy is zero-config: import and click Deploy.
 
-## 0. Prerequisites
+## Current production state
 
-- Node.js 20+ and npm
-- A [Vercel](https://vercel.com) account with access to the `yazdanctx/pomodorus` GitHub repo
-- Access to the Convex project (team `yazdun`, project `pomodorus`)
+- Convex production deployment: `tacit-clam-994` (`https://tacit-clam-994.convex.cloud`), with the current functions/schema deployed.
+- Auth (`JWT_PRIVATE_KEY`, `JWKS`) is configured on it, and `SITE_URL` is set to `https://pomodorus.vercel.app` (adjust below if your URL differs).
+- `.env.production` (committed) pins `NEXT_PUBLIC_CONVEX_URL` to the production deployment, so a plain `npm run build` on Vercel connects to production Convex with no dashboard env vars.
+- `DEV_FAST_POMODORO` is **not** set on production — the 3-second test sessions are rejected there. Keep it that way.
 
-```bash
-git clone https://github.com/yazdanctx/pomodorus.git
-cd pomodorus
-npm install
-npx convex login        # log into the Convex account that owns the project
-```
+## First deploy
 
-## 1. Create the Convex production deploy key
+1. In Vercel: **Add New → Project** → import `yazdanctx/pomodorus`. Framework preset: **Next.js** (auto-detected). Change nothing else.
+2. Click **Deploy**.
+3. If Vercel assigned a URL other than `https://pomodorus.vercel.app`, point auth at the real one (from a clone of this repo, after `npx convex login`):
 
-1. Open the [Convex dashboard](https://dashboard.convex.dev) → project **pomodorus** → **Settings** → **Deploy keys** (make sure the **Production** deployment is selected, not `dev:vibrant-cheetah-995`).
-2. Generate a **production deploy key** and copy it. You'll paste it into Vercel in step 2.
+   ```bash
+   npx convex env set SITE_URL https://<your-app>.vercel.app --prod
+   ```
 
-## 2. Create the Vercel project
+   Applies immediately, no redeploy needed.
 
-1. In the Vercel dashboard: **Add New → Project** → import `yazdanctx/pomodorus`. Framework preset: **Next.js** (auto-detected). Keep the root directory as the repo root.
-2. Before the first deploy, in the project's **Settings**:
-   - **Environment Variables** → add `CONVEX_DEPLOY_KEY` = the key from step 1, scoped to **Production**.
-   - **Build & Development Settings** → override **Build Command** with:
+## Sanity checklist after deploy
 
-     ```
-     npx convex deploy --cmd 'npm run build'
-     ```
+- Landing page loads with the feed empty state.
+- Signup works (username required, immutable); the production database starts empty — dev accounts don't carry over.
+- Start a 25-minute session; it shows up in the feed from a second browser.
+- Desktop notification + chime fire at session end (Vercel is HTTPS, so the Notification API is available).
 
-   This makes every Vercel production build first push the Convex functions/schema to the production deployment and inject `NEXT_PUBLIC_CONVEX_URL` for the Next.js build automatically — you do not set that variable by hand.
+## Ongoing deploys — important
 
-## 3. First deploy
-
-Trigger a deploy (push to `main`, or press **Deploy** in Vercel). It will build, but **auth won't work yet** — the production Convex deployment has no auth keys. Note the production URL Vercel assigns (e.g. `https://pomodorus.vercel.app`).
-
-## 4. Configure Convex Auth on the production deployment
-
-From the repo directory on your machine:
+Pushing to `main` redeploys **only the Next.js app**. Whenever `convex/` changes (schema or functions), the production Convex deployment must be updated too:
 
 ```bash
-npx @convex-dev/auth --prod
+npx convex deploy
 ```
 
-This generates and sets `JWT_PRIVATE_KEY` and `JWKS` on the **production** Convex deployment and prompts for `SITE_URL` — enter your production URL from step 3 (e.g. `https://pomodorus.vercel.app`).
+To automate that instead, switch Vercel to the CI setup:
 
-If you ever need to set it manually instead:
+1. Convex dashboard → project **pomodorus** → **Settings** → **Deploy keys** (Production) → generate a key.
+2. Vercel project → **Settings → Environment Variables**: add `CONVEX_DEPLOY_KEY` (Production scope).
+3. Vercel project → **Settings → Build & Development Settings** → Build Command:
 
-```bash
-npx convex env set SITE_URL https://pomodorus.vercel.app --prod
-```
+   ```
+   npx convex deploy --cmd 'npm run build'
+   ```
 
-Env changes on the Convex deployment apply immediately; no Vercel redeploy needed.
+With that in place, every push to `main` deploys Convex and the app together (and `NEXT_PUBLIC_CONVEX_URL` is injected by the deploy command, overriding `.env.production`).
 
-## 5. Sanity checklist
+## Local development
 
-- **Do NOT set `DEV_FAST_POMODORO` on production.** Without it, the server rejects the 3-second test session, and production builds don't show the ⚡ option anyway.
-- The production database starts empty — dev accounts (and anything else in `dev:vibrant-cheetah-995`) do not carry over. Sign up fresh; usernames are required and immutable.
-- Verify on the live URL: landing page shows the feed empty state, signup with a username works, a 25-minute session appears in the feed from a second browser, and desktop notifications + the chime fire at session end (Vercel serves HTTPS, so the Notification API is available).
-
-## Day-to-day afterwards
-
-- Pushing to `main` auto-deploys: Convex functions and the Next.js app stay in sync because of the build command override.
-- Local development is unchanged: `npx convex dev` + `npm run dev` (HTTPS on `https://localhost:3000`) against the dev deployment.
+Unchanged: `npx convex dev` + `npm run dev` (HTTPS on `https://localhost:3000`) against the dev deployment `vibrant-cheetah-995`. `.env.local` overrides `.env.production` locally, so local work never touches production.
