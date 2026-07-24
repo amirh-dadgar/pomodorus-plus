@@ -35,7 +35,9 @@ export function CategoryPicker({
   onSelect: (id: Id<"categories"> | null) => void;
 }) {
   const categories = useQuery(api.categories.list) ?? [];
+  const create = useMutation(api.categories.create);
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Doc<"categories"> | null>(null);
 
@@ -46,9 +48,25 @@ export function CategoryPicker({
     setCreating(true);
   }
 
+  async function createFromSearch() {
+    const trimmed = search.trim();
+    if (!trimmed) return;
+    const id = await create({ name: trimmed, isPublic: true }).catch(() => null);
+    if (id) {
+      onSelect(id);
+      setOpen(false);
+    }
+  }
+
   return (
     <div className="flex w-full flex-col items-center">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setSearch("");
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -75,16 +93,19 @@ export function CategoryPicker({
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0">
           <Command>
-            <CommandInput placeholder={copy.categories.search} />
+            <CommandInput
+              placeholder={copy.categories.search}
+              value={search}
+              onValueChange={setSearch}
+            />
             <CommandList>
               <CommandEmpty>
-                <div className="flex flex-col items-center gap-2">
-                  <span>{copy.categories.noResults}</span>
-                  <Button size="sm" variant="outline" onClick={openCreate}>
-                    <Plus />
-                    {copy.categories.new}
-                  </Button>
-                </div>
+                <Button size="sm" variant="outline" onClick={createFromSearch}>
+                  <Plus />
+                  <span className="truncate">
+                    {t(copy.categories.createNamed, { name: search.trim() })}
+                  </span>
+                </Button>
               </CommandEmpty>
               <CommandGroup>
                 {categories.map((category) => (

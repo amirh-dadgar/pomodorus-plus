@@ -143,6 +143,9 @@ export function TimerApp() {
         </section>
       ) : (
         <section className="flex w-full flex-col items-center gap-6">
+          <p className="font-mono text-7xl font-bold tabular-nums tracking-tight" dir="ltr">
+            {faClock(choice === "fast" ? 3_000 : choice * 60_000)}
+          </p>
           <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
           <div className="flex gap-2" dir="ltr">
             {([25, 55] as const).map((m) => (

@@ -54,7 +54,8 @@
       "Bash(lsof -ti:3111 -sTCP:LISTEN)",
       "Bash(xargs -r kill)",
       "Bash(git -C /root/pomodorus status --short)",
-      "Bash(git -C /root/pomodorus diff .claude/settings.local.json)"
+      "Bash(git -C /root/pomodorus diff .claude/settings.local.json)",
+      "Bash(node /root/pomodorus/.ui-check2.mjs)"
     ]
   }
 }

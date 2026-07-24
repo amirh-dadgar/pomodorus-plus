@@ -49,7 +49,7 @@
   "categories": {
     "pick": "یه تسک انتخاب کن",
     "search": "بگرد…",
-    "noResults": "همچین تسکی نداری",
+    "createNamed": "«{name}» رو بساز",
     "new": "تسک جدید",
     "namePlaceholder": "اسم تسک",
     "publicLabel": "پابلیک باشه؟ (اسمش تو فید دیده میشه)",
