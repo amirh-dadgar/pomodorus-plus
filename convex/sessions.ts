@@ -207,7 +207,6 @@ export const myState = query({
       .query("dailyStats")
       .withIndex("by_user_day", (q) => q.eq("userId", userId).eq("dayKey", tehranDayKey(Date.now())))
       .unique();
-    const user = await ctx.db.get(userId);
     let category: Doc<"categories"> | null = null;
     if (running?.categoryId) category = await ctx.db.get(running.categoryId);
     // Latest naturally-completed session (per-user sessions are sequential,
@@ -219,7 +218,6 @@ export const myState = query({
       .order("desc")
       .first();
     return {
-      name: user?.name ?? "",
       lastEnded: lastCompleted
         ? {
             id: lastCompleted._id,
@@ -255,7 +253,7 @@ export const activeFeed = query({
     const feed = [];
     for (const session of running) {
       const user = await ctx.db.get(session.userId);
-      if (!user) continue;
+      if (!user?.username) continue;
       let label: string | null = null;
       if (session.kind === "work") {
         const category = session.categoryId ? await ctx.db.get(session.categoryId) : null;
@@ -263,8 +261,7 @@ export const activeFeed = query({
       }
       feed.push({
         id: session._id,
-        name: user.name ?? "",
-        username: user.username ?? null,
+        username: user.username,
         isMe: session.userId === userId,
         kind: session.kind,
         label, // null on work = private task

@@ -8,23 +8,17 @@ import copy from "../lib/copy.json";
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
 // Minimal email/password auth: no verification, no reset.
-// `name` is the public display name shown in the feed; `username` is the
-// unique immutable handle used in profile URLs.
+// `username` is the unique immutable handle shown in the feed and used in
+// profile URLs.
 const PasswordWithProfile = Password({
   profile(params) {
     const email = String(params.email ?? "").trim().toLowerCase();
-    const name = String(params.name ?? "").trim();
     const username = String(params.username ?? "").trim().toLowerCase();
-    if (params.flow === "signUp") {
-      if (name.length < 2 || name.length > 32) {
-        throw new ConvexError(copy.errors.nameLength);
-      }
-      if (!USERNAME_RE.test(username)) {
-        throw new ConvexError(copy.errors.usernameInvalid);
-      }
+    if (params.flow === "signUp" && !USERNAME_RE.test(username)) {
+      throw new ConvexError(copy.errors.usernameInvalid);
     }
     // Only persisted on signUp; on other flows just `email` is read from this.
-    return { email, name: name || email.split("@")[0], username };
+    return { email, username };
   },
 });
 

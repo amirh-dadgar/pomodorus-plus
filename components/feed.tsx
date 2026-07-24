@@ -28,13 +28,9 @@ export function Feed() {
           return (
             <li key={entry.id} className="flex items-center justify-between gap-3 text-sm">
               <span className="truncate">
-                {entry.username ? (
-                  <Link href={`/u/${entry.username}`} className="font-medium hover:underline">
-                    {entry.name}
-                  </Link>
-                ) : (
-                  <span className="font-medium">{entry.name}</span>
-                )}
+                <Link href={`/u/${entry.username}`} className="font-medium hover:underline">
+                  {entry.username}
+                </Link>
                 <span className="text-muted-foreground">
                   {" — "}
                   {isBreak ? copy.feed.onBreak : entry.label ?? copy.feed.privateTask}

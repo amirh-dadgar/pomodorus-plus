@@ -5,10 +5,9 @@ import { authTables } from "@convex-dev/auth/server";
 export default defineSchema({
   ...authTables,
 
-  // authTables.users plus `username`: the unique, immutable public handle
-  // used in profile URLs (/u/[username]).
+  // authTables.users minus `name`, plus `username`: the unique, immutable
+  // public handle shown in the feed and used in profile URLs (/u/[username]).
   users: defineTable({
-    name: v.optional(v.string()),
     image: v.optional(v.string()),
     email: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),

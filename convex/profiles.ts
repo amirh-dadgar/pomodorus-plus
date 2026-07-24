@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-/** Public profile: display name + daily focus totals. Null when no such user. */
+/** Public profile: username + daily focus totals. Null when no such user. */
 export const byUsername = query({
   args: { username: v.string() },
   handler: async (ctx, { username }) => {
@@ -17,7 +17,6 @@ export const byUsername = query({
       .order("desc")
       .take(365);
     return {
-      name: user.name ?? "",
       username: user.username,
       days: days.map((d) => ({ dayKey: d.dayKey, totalMs: d.totalMs })),
     };

@@ -20,10 +20,9 @@ export function Profile({ username }: { username: string }) {
         <p className="pt-20 text-center text-sm text-muted-foreground">{copy.profile.notFound}</p>
       ) : (
         <div className="pt-10">
-          <h1 className="text-lg font-bold">{profile.name}</h1>
-          <p className="text-sm text-muted-foreground" dir="ltr">
+          <h1 className="text-lg font-bold" dir="ltr">
             @{profile.username}
-          </p>
+          </h1>
           <h2 className="mt-8 mb-2 text-sm font-medium text-muted-foreground">
             {copy.profile.focusPerDay}
           </h2>

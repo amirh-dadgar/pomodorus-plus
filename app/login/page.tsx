@@ -43,26 +43,20 @@ export default function LoginPage() {
         <h1 className="text-center text-2xl font-bold tracking-tight">{copy.app.name}</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           {flow === "signUp" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="name">{copy.login.displayName}</Label>
-                <Input id="name" name="name" required minLength={2} maxLength={32} dir="auto" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="username">{copy.login.username}</Label>
-                <Input
-                  id="username"
-                  name="username"
-                  required
-                  minLength={3}
-                  maxLength={20}
-                  pattern="[a-z0-9_]+"
-                  title={copy.login.usernameHint}
-                  dir="ltr"
-                />
-                <p className="text-xs text-muted-foreground">{copy.login.usernameHint}</p>
-              </div>
-            </>
+            <div className="space-y-2">
+              <Label htmlFor="username">{copy.login.username}</Label>
+              <Input
+                id="username"
+                name="username"
+                required
+                minLength={3}
+                maxLength={20}
+                pattern="[a-z0-9_]+"
+                title={copy.login.usernameHint}
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">{copy.login.usernameHint}</p>
+            </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="email">{copy.login.email}</Label>
