@@ -55,8 +55,9 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 
 ## Notifications
 
-- Notification permission requested upfront after login.
-- System notification when a work session or break ends; live countdown in the tab title.
+- Notification permission requested when the user starts a session (browsers require a user gesture for the prompt).
+- System notification plus a short WebAudio chime (no audio asset) when a work session or break ends; live countdown in the tab title.
+- Ends are detected via the server-recorded completion (`endedAt` / `lastEnded` in `myState`), so they also fire for dev fast sessions. Cancels and skipped breaks don't notify.
 - Known limit (no push server): notifications only fire while the app is open in some tab (background tab OK, closed browser no).
 
 ## Environment

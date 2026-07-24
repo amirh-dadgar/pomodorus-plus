@@ -42,6 +42,9 @@ export default defineSchema({
     // Dev-only fast session: stored/credited at the nominal duration above,
     // but the finalize job fires after seconds instead.
     devFast: v.optional(v.boolean()),
+    // Actual completion time. Diverges from startedAt + durationMs for
+    // devFast sessions; drives end-of-session notifications.
+    endedAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
     .index("by_user_status", ["userId", "status"]),

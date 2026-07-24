@@ -137,8 +137,8 @@ export const finalize = internalMutation({
   handler: async (ctx, { sessionId }) => {
     const session = await ctx.db.get(sessionId);
     if (!session || session.status !== "running") return;
-    await ctx.db.patch(sessionId, { status: "completed" });
     const now = Date.now();
+    await ctx.db.patch(sessionId, { status: "completed", endedAt: now });
     const stats = await getStats(ctx, session.userId);
 
     if (session.kind === "work") {
@@ -210,8 +210,23 @@ export const myState = query({
     const user = await ctx.db.get(userId);
     let category: Doc<"categories"> | null = null;
     if (running?.categoryId) category = await ctx.db.get(running.categoryId);
+    // Latest naturally-completed session (per-user sessions are sequential,
+    // so creation order matches completion order). The client notifies and
+    // plays a sound when this changes.
+    const lastCompleted = await ctx.db
+      .query("sessions")
+      .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "completed"))
+      .order("desc")
+      .first();
     return {
       name: user?.name ?? "",
+      lastEnded: lastCompleted
+        ? {
+            id: lastCompleted._id,
+            kind: lastCompleted.kind,
+            at: lastCompleted.endedAt ?? lastCompleted.startedAt + lastCompleted.durationMs,
+          }
+        : null,
       running: running
         ? {
             id: running._id,

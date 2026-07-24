@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { copy, t } from "@/lib/copy";
 import { faClock, faDigits, faDuration } from "@/lib/format";
+import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
 import { Feed } from "@/components/feed";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -67,31 +68,38 @@ export function TimerApp() {
     };
   }, [running, remainingMs]);
 
-  // Notify when a phase ends naturally (not on cancel/skip: those end with
-  // plenty of time left, a natural end has ~0 remaining). Fast dev sessions
-  // end with almost their whole nominal duration left, so let those through.
-  const prevRunning = useRef<Running | null>(null);
+  // Notify + ding when a session completes. Driven by the server's
+  // lastEnded (only naturally-completed sessions land there — cancels and
+  // skips don't), so it also works for devFast sessions that end with most
+  // of their nominal duration left.
+  const lastEnded = state?.lastEnded ?? null;
+  const seenEndedId = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    const prev = prevRunning.current;
-    prevRunning.current = running;
-    if (!prev || prev.id === running?.id) return;
-    const endedNaturally = prev.startedAt + prev.durationMs - Date.now() <= 2000;
-    const fastHandoff = SHOW_FAST_OPTION && running !== null;
-    if (
-      (!endedNaturally && !fastHandoff) ||
-      !("Notification" in window) ||
-      Notification.permission !== "granted"
-    ) {
+    if (state === undefined) return;
+    // First loaded state: remember where we are, don't notify for the past.
+    if (seenEndedId.current === undefined) {
+      seenEndedId.current = lastEnded?.id ?? null;
       return;
     }
-    if (prev.kind === "work") {
-      new Notification(copy.notifications.workDoneTitle, { body: copy.notifications.workDoneBody });
-    } else {
-      new Notification(copy.notifications.breakDoneTitle, {
-        body: copy.notifications.breakDoneBody,
-      });
+    if (!lastEnded || lastEnded.id === seenEndedId.current) return;
+    seenEndedId.current = lastEnded.id;
+    // Ignore completions that happened while the tab wasn't around.
+    if (Date.now() - lastEnded.at > 60_000) return;
+    playDing();
+    if ("Notification" in window && Notification.permission === "granted") {
+      if (lastEnded.kind === "work") {
+        new Notification(copy.notifications.workDoneTitle, {
+          body: copy.notifications.workDoneBody,
+          tag: "pomodorus",
+        });
+      } else {
+        new Notification(copy.notifications.breakDoneTitle, {
+          body: copy.notifications.breakDoneBody,
+          tag: "pomodorus",
+        });
+      }
     }
-  }, [running]);
+  }, [state, lastEnded]);
 
   if (state === undefined) {
     return <div className="flex flex-1 items-center justify-center text-muted-foreground">…</div>;
@@ -160,6 +168,12 @@ export function TimerApp() {
             className="w-40"
             disabled={categoryId === null}
             onClick={() => {
+              // User gesture: the only moment browsers reliably allow the
+              // permission prompt and unlocking audio playback.
+              unlockAudio();
+              if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+              }
               if (categoryId !== null) {
                 startWork({
                   categoryId,
