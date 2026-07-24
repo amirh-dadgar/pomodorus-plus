@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
-import { Check, ChevronsUpDown, Pencil, Plus } from "lucide-react";
+import { ArrowRight, Check, ChevronsUpDown, Pencil, Plus } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+type View =
+  | { name: "picker" }
+  | { name: "create" }
+  | { name: "edit"; category: Doc<"categories"> };
 
 export function CategoryPicker({
   selected,
@@ -37,15 +41,19 @@ export function CategoryPicker({
   const categories = useQuery(api.categories.list) ?? [];
   const create = useMutation(api.categories.create);
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<View>({ name: "picker" });
   const [search, setSearch] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<Doc<"categories"> | null>(null);
 
   const selectedCategory = categories.find((c) => c._id === selected) ?? null;
 
-  function openCreate() {
+  const backToPicker = () => setView({ name: "picker" });
+
+  // Radix only fires onOpenChange for user-initiated closes, so every
+  // programmatic close has to reset the view and search itself.
+  function closeAndReset() {
     setOpen(false);
-    setCreating(true);
+    setView({ name: "picker" });
+    setSearch("");
   }
 
   async function createFromSearch() {
@@ -54,128 +62,158 @@ export function CategoryPicker({
     const id = await create({ name: trimmed, isPublic: true }).catch(() => null);
     if (id) {
       onSelect(id);
-      setOpen(false);
+      closeAndReset();
     }
   }
 
   return (
-    <div className="flex w-full flex-col items-center">
-      <Popover
+    <>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={open}
+        className="w-64 justify-between"
+        onClick={() => setOpen(true)}
+      >
+        <span className="truncate">
+          {selectedCategory ? (
+            <>
+              {selectedCategory.name}
+              {!selectedCategory.isPublic && (
+                <span className="ms-1 text-xs opacity-60">
+                  {copy.categories.privateBadge}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-muted-foreground">{copy.categories.pick}</span>
+          )}
+        </span>
+        <ChevronsUpDown className="opacity-50" />
+      </Button>
+
+      <Dialog
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
-          if (!next) setSearch("");
+          if (!next) {
+            setView({ name: "picker" });
+            setSearch("");
+          }
         }}
       >
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-64 justify-between"
-          >
-            <span className="truncate">
-              {selectedCategory ? (
-                <>
-                  {selectedCategory.name}
-                  {!selectedCategory.isPublic && (
-                    <span className="ms-1 text-xs opacity-60">
-                      {copy.categories.privateBadge}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-muted-foreground">{copy.categories.pick}</span>
-              )}
-            </span>
-            <ChevronsUpDown className="opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-0">
-          <Command>
-            <CommandInput
-              placeholder={copy.categories.search}
-              value={search}
-              onValueChange={setSearch}
-            />
-            <CommandList>
-              <CommandEmpty>
-                <Button size="sm" variant="outline" onClick={createFromSearch}>
-                  <Plus />
-                  <span className="truncate">
-                    {t(copy.categories.createNamed, { name: search.trim() })}
-                  </span>
-                </Button>
-              </CommandEmpty>
-              <CommandGroup>
-                {categories.map((category) => (
-                  <CommandItem
-                    key={category._id}
-                    value={category.name}
-                    onSelect={() => {
-                      onSelect(category._id);
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={selected === category._id ? "opacity-100" : "opacity-0"}
-                    />
-                    <span className="flex-1 truncate">{category.name}</span>
-                    {!category.isPublic && (
-                      <span className="text-xs text-muted-foreground">
-                        {copy.categories.privateBadge}
+        <DialogContent className="sm:max-w-xs">
+          {view.name === "picker" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{copy.categories.pick}</DialogTitle>
+              </DialogHeader>
+              <Command className="bg-transparent p-0">
+                <CommandInput
+                  autoFocus
+                  placeholder={copy.categories.search}
+                  value={search}
+                  onValueChange={setSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>
+                    <Button size="sm" variant="outline" onClick={createFromSearch}>
+                      <Plus />
+                      <span className="truncate">
+                        {t(copy.categories.createNamed, { name: search.trim() })}
                       </span>
-                    )}
-                    <button
-                      type="button"
-                      aria-label={t(copy.categories.editAria, { name: category.name })}
-                      className="rounded-sm p-1 text-muted-foreground hover:text-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpen(false);
-                        setEditing(category);
-                      }}
-                    >
-                      <Pencil className="size-3.5" />
-                    </button>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <CommandItem onSelect={openCreate}>
-                  <Plus />
-                  {copy.categories.new}
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+                    </Button>
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {categories.map((category) => (
+                      <CommandItem
+                        key={category._id}
+                        value={category.name}
+                        onSelect={() => {
+                          onSelect(category._id);
+                          closeAndReset();
+                        }}
+                      >
+                        <Check
+                          className={selected === category._id ? "opacity-100" : "opacity-0"}
+                        />
+                        <span className="flex-1 truncate">{category.name}</span>
+                        {!category.isPublic && (
+                          <span className="text-xs text-muted-foreground">
+                            {copy.categories.privateBadge}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          aria-label={t(copy.categories.editAria, { name: category.name })}
+                          className="rounded-sm p-1 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setView({ name: "edit", category });
+                          }}
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                  <CommandSeparator alwaysRender />
+                  <CommandGroup forceMount>
+                    <CommandItem forceMount onSelect={() => setView({ name: "create" })}>
+                      <Plus />
+                      {copy.categories.new}
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </>
+          )}
 
-      <CreateCategoryDialog
-        open={creating}
-        onOpenChange={setCreating}
-        onCreated={(id) => onSelect(id)}
-      />
-      {editing && (
-        <EditCategoryDialog
-          category={editing}
-          onOpenChange={(next) => !next && setEditing(null)}
-          onDeleted={() => selected === editing._id && onSelect(null)}
-        />
-      )}
-    </div>
+          {view.name === "create" && (
+            <CreateView
+              onBack={backToPicker}
+              onCreated={(id) => {
+                onSelect(id);
+                closeAndReset();
+              }}
+            />
+          )}
+
+          {view.name === "edit" && (
+            <EditView
+              key={view.category._id}
+              category={view.category}
+              onBack={backToPicker}
+              onDeleted={() => selected === view.category._id && onSelect(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
-function CreateCategoryDialog({
-  open,
-  onOpenChange,
+function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <DialogHeader className="flex-row items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={copy.categories.back}
+        onClick={onBack}
+      >
+        <ArrowRight />
+      </Button>
+      <DialogTitle>{title}</DialogTitle>
+    </DialogHeader>
+  );
+}
+
+function CreateView({
+  onBack,
   onCreated,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onBack: () => void;
   onCreated: (id: Id<"categories">) => void;
 }) {
   const create = useMutation(api.categories.create);
@@ -186,57 +224,48 @@ function CreateCategoryDialog({
     const trimmed = name.trim();
     if (!trimmed) return;
     const id = await create({ name: trimmed, isPublic }).catch(() => null);
-    if (id) {
-      onCreated(id);
-      setName("");
-      setIsPublic(true);
-      onOpenChange(false);
-    }
+    if (id) onCreated(id);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs">
-        <DialogHeader>
-          <DialogTitle>{copy.categories.new}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <Input
-            autoFocus
-            placeholder={copy.categories.namePlaceholder}
-            value={name}
-            dir="auto"
-            maxLength={40}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-          />
-          <div className="flex items-center justify-between">
-            <Label htmlFor="new-public" className="text-sm text-muted-foreground">
-              {copy.categories.publicLabel}
-            </Label>
-            <Switch id="new-public" checked={isPublic} onCheckedChange={setIsPublic} />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleCreate} disabled={!name.trim()}>
-              {copy.categories.add}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => onOpenChange(false)}>
-              {copy.categories.cancel}
-            </Button>
-          </div>
+    <>
+      <BackHeader title={copy.categories.new} onBack={onBack} />
+      <div className="flex flex-col gap-4">
+        <Input
+          autoFocus
+          placeholder={copy.categories.namePlaceholder}
+          value={name}
+          dir="auto"
+          maxLength={40}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+        />
+        <div className="flex items-center justify-between">
+          <Label htmlFor="new-public" className="text-sm text-muted-foreground">
+            {copy.categories.publicLabel}
+          </Label>
+          <Switch id="new-public" checked={isPublic} onCheckedChange={setIsPublic} />
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleCreate} disabled={!name.trim()}>
+            {copy.categories.add}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onBack}>
+            {copy.categories.cancel}
+          </Button>
+        </div>
+      </div>
+    </>
   );
 }
 
-function EditCategoryDialog({
+function EditView({
   category,
-  onOpenChange,
+  onBack,
   onDeleted,
 }: {
   category: Doc<"categories">;
-  onOpenChange: (open: boolean) => void;
+  onBack: () => void;
   onDeleted: () => void;
 }) {
   const update = useMutation(api.categories.update);
@@ -245,45 +274,47 @@ function EditCategoryDialog({
   const [isPublic, setIsPublic] = useState(category.isPublic);
 
   return (
-    <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs">
-        <DialogHeader>
-          <DialogTitle>{copy.categories.editTitle}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <Input value={name} dir="auto" maxLength={40} onChange={(e) => setName(e.target.value)} />
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`public-${category._id}`} className="text-sm text-muted-foreground">
-              {copy.categories.publicLabel}
-            </Label>
-            <Switch id={`public-${category._id}`} checked={isPublic} onCheckedChange={setIsPublic} />
-          </div>
-          <div className="flex justify-between gap-2">
-            <Button
-              size="sm"
-              disabled={!name.trim()}
-              onClick={async () => {
-                await update({ id: category._id, name: name.trim(), isPublic }).catch(() => {});
-                onOpenChange(false);
-              }}
-            >
-              {copy.categories.save}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-muted-foreground"
-              onClick={async () => {
-                await remove({ id: category._id }).catch(() => {});
-                onDeleted();
-                onOpenChange(false);
-              }}
-            >
-              {copy.categories.delete}
-            </Button>
-          </div>
+    <>
+      <BackHeader title={copy.categories.editTitle} onBack={onBack} />
+      <div className="flex flex-col gap-4">
+        <Input
+          autoFocus
+          value={name}
+          dir="auto"
+          maxLength={40}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <div className="flex items-center justify-between">
+          <Label htmlFor={`public-${category._id}`} className="text-sm text-muted-foreground">
+            {copy.categories.publicLabel}
+          </Label>
+          <Switch id={`public-${category._id}`} checked={isPublic} onCheckedChange={setIsPublic} />
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-between gap-2">
+          <Button
+            size="sm"
+            disabled={!name.trim()}
+            onClick={async () => {
+              await update({ id: category._id, name: name.trim(), isPublic }).catch(() => {});
+              onBack();
+            }}
+          >
+            {copy.categories.save}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-muted-foreground"
+            onClick={async () => {
+              await remove({ id: category._id }).catch(() => {});
+              onDeleted();
+              onBack();
+            }}
+          >
+            {copy.categories.delete}
+          </Button>
+        </div>
+      </div>
+    </>
   );
 }

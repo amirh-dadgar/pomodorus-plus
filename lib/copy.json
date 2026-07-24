@@ -49,6 +49,7 @@
   "categories": {
     "pick": "یه تسک انتخاب کن",
     "search": "بگرد…",
+    "back": "برگرد",
     "createNamed": "«{name}» رو بساز",
     "new": "تسک جدید",
     "namePlaceholder": "اسم تسک",
