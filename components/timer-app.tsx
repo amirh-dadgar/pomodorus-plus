@@ -42,12 +42,10 @@ export function TimerApp() {
   const running = state.running;
   const remainingMs = running ? Math.max(0, endAt(running) - now) : null;
 
-  // Live countdown in the tab title.
+  // Live countdown in the tab title: just the clock, nothing else.
   useEffect(() => {
     document.title =
-      running && remainingMs !== null
-        ? `${faClock(remainingMs)} — ${KIND_LABEL[running.kind]}`
-        : copy.app.name;
+      running && remainingMs !== null ? faClock(remainingMs) : copy.app.name;
     return () => {
       document.title = copy.app.name;
     };
