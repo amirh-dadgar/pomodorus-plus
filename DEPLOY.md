@@ -4,8 +4,7 @@ The Convex production side is **already deployed and configured**, so the first 
 
 ## Current production state
 
-- Convex production deployment: `tacit-clam-994` (`https://tacit-clam-994.convex.cloud`).
-- **Pending:** the local-first sync rework (new `presence` table, `sync.push`, schema changes) is deployed to dev only — run `npx convex deploy` before/with the next Vercel deploy, or old clients' scheduled `finalize` jobs and the new app will disagree.
+- Convex production deployment: `tacit-clam-994` (`https://tacit-clam-994.convex.cloud`), running the local-first sync functions (deployed 2026-07-25). A version-skew incident from deploying the Vercel app before the Convex functions is what motivated the CI setup below — prefer it.
 - Auth (`JWT_PRIVATE_KEY`, `JWKS`) is configured on it, and `SITE_URL` is set to `https://pomodorus.vercel.app` (adjust below if your URL differs).
 - `.env.production` (committed) pins `NEXT_PUBLIC_CONVEX_URL` to the production deployment, so a plain `npm run build` on Vercel connects to production Convex with no dashboard env vars.
 - `DEV_FAST_POMODORO` is **not** set on production — the 3-second test sessions are rejected there. Keep it that way.

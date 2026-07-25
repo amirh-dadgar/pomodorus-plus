@@ -212,9 +212,40 @@ export function skipBreak() {
 
 // ---- Categories: the server cache with pending local ops applied on top ----
 
+/**
+ * Coerce whatever a server (or an old persisted cache) handed us into rows
+ * that are safe to key by clientId. Born of a real incident: a stale
+ * backend without clientId in its list response collapsed every category
+ * onto the single key `undefined`, leaving one visible. Rows fall back to
+ * their Convex _id; rows with no usable key or name are dropped.
+ */
+export function normalizeServerCategories(rows: readonly unknown[]): ServerCategory[] {
+  const out: ServerCategory[] = [];
+  for (const value of rows) {
+    if (typeof value !== "object" || value === null) continue;
+    const row = value as Record<string, unknown>;
+    const clientId =
+      typeof row.clientId === "string"
+        ? row.clientId
+        : typeof row._id === "string"
+          ? row._id
+          : null;
+    if (clientId === null || typeof row.name !== "string") continue;
+    out.push({
+      clientId,
+      name: row.name,
+      isPublic: row.isPublic !== false,
+      updatedAt: typeof row.updatedAt === "number" ? row.updatedAt : 0,
+    });
+  }
+  return out;
+}
+
 export function effectiveCategories(state: LocalState): Category[] {
   const byId = new Map<string, Category>();
-  for (const c of state.serverCategories) byId.set(c.clientId, c);
+  // Normalized again on read so a bad cache persisted by an old build
+  // still renders correctly, not just future writes.
+  for (const c of normalizeServerCategories(state.serverCategories)) byId.set(c.clientId, c);
   for (const op of state.pendingCategoryOps) {
     const existing = byId.get(op.clientId);
     if (existing && existing.updatedAt > op.at) continue; // server already newer
@@ -280,7 +311,8 @@ export function deleteCategory(clientId: string) {
 // ---- Sync bookkeeping ----
 
 /** Refresh the cached server mirror (from the live categories query). */
-export function setServerCategories(categories: ServerCategory[]) {
+export function setServerCategories(rows: readonly unknown[]) {
+  const categories = normalizeServerCategories(rows);
   const s = loadState();
   // Cheap deep-equality check keeps reconnect churn from thrashing storage.
   if (JSON.stringify(s.serverCategories) === JSON.stringify(categories)) return;
