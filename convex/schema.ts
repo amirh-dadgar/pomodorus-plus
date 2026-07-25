@@ -24,8 +24,22 @@ export default defineSchema({
     userId: v.id("users"),
     name: v.string(),
     isPublic: v.boolean(),
-  }).index("by_user", ["userId"]),
+    // Client-minted id (uuid) so devices can reference categories they
+    // created offline. Absent on rows created before the local-first move;
+    // those are addressed by their Convex _id instead.
+    clientId: v.optional(v.string()),
+    // Client timestamp of the last accepted edit — last-write-wins on sync.
+    updatedAt: v.optional(v.number()),
+    // Tombstone instead of a hard delete so a delete on one device beats a
+    // rename queued on another. Past focus time lives in dailyStats anyway.
+    deleted: v.optional(v.boolean()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_client", ["userId", "clientId"]),
 
+  // Append-only log of completed sessions, reported by devices on sync
+  // (see docs/adr/0001-local-first-timer.md). Only completed work sessions
+  // are synced; `running` rows and break rows are pre-migration data.
   sessions: defineTable({
     userId: v.id("users"),
     kind: v.union(v.literal("work"), v.literal("shortBreak"), v.literal("longBreak")),
@@ -38,21 +52,34 @@ export default defineSchema({
       v.literal("canceled"),
       v.literal("skipped"),
     ),
-    // Dev-only fast session: stored/credited at the nominal duration above,
-    // but the finalize job fires after seconds instead.
+    // Dev-only fast session: credited at the nominal duration above but
+    // actually finished in seconds.
     devFast: v.optional(v.boolean()),
-    // Actual completion time. Diverges from startedAt + durationMs for
-    // devFast sessions; drives end-of-session notifications.
     endedAt: v.optional(v.number()),
+    // Client-minted id (uuid); makes sync retries idempotent.
+    clientId: v.optional(v.string()),
   })
     .index("by_status", ["status"])
-    .index("by_user_status", ["userId", "status"]),
+    .index("by_user_status", ["userId", "status"])
+    .index("by_user_client", ["userId", "clientId"]),
 
-  // Cycle counter for the 4-session pomodoro rhythm.
+  // Best-effort "who's working right now" advertisements for the feed.
+  // One row per user, upserted when an online client starts a session,
+  // expiring on its own at startedAt + durationMs. Advisory, not truth.
+  presence: defineTable({
+    userId: v.id("users"),
+    kind: v.union(v.literal("work"), v.literal("shortBreak"), v.literal("longBreak")),
+    // Category name for public work sessions; null = private task or break.
+    label: v.union(v.string(), v.null()),
+    startedAt: v.number(),
+    durationMs: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // Legacy: the cycle counter moved into the client with the local-first
+  // timer. Kept only because pre-migration rows still exist.
   userStats: defineTable({
     userId: v.id("users"),
     cycleCount: v.number(),
-    // Last time a session/break ended — used for the 1h idle reset.
     lastActivityAt: v.number(),
   }).index("by_user", ["userId"]),
 

@@ -13,6 +13,7 @@ import type * as categories from "../categories.js";
 import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
 import type * as sessions from "../sessions.js";
+import type * as sync from "../sync.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   profiles: typeof profiles;
   sessions: typeof sessions;
+  sync: typeof sync;
 }>;
 
 /**

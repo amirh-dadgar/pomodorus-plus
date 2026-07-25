@@ -1,79 +1,28 @@
-import { v, ConvexError } from "convex/values";
-import { mutation, query, type MutationCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import { query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import copy from "../lib/copy.json";
 
-function validateName(name: string) {
-  const trimmed = name.trim();
-  if (trimmed.length < 1 || trimmed.length > 40) {
-    throw new ConvexError(copy.errors.categoryNameLength);
-  }
-  return trimmed;
-}
-
-async function requireOwnCategory(ctx: MutationCtx, id: Id<"categories">) {
-  const userId = await getAuthUserId(ctx);
-  if (userId === null) throw new ConvexError(copy.errors.signInFirst);
-  const category = await ctx.db.get(id);
-  if (!category || category.userId !== userId) {
-    throw new ConvexError(copy.errors.categoryNotFound);
-  }
-  const running = await ctx.db
-    .query("sessions")
-    .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "running"))
-    .unique();
-  if (running?.categoryId === id) {
-    throw new ConvexError(copy.errors.categoryBusy);
-  }
-  return category;
-}
-
+/**
+ * The signed-in user's categories. Read-only: every category write goes
+ * through sync.push (the same path online and offline), so devices behave
+ * identically either way. Clients key categories by clientId, falling back
+ * to the Convex _id for rows that predate the local-first move.
+ */
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) return [];
-    return await ctx.db
+    const rows = await ctx.db
       .query("categories")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
-  },
-});
-
-export const create = mutation({
-  args: { name: v.string(), isPublic: v.boolean() },
-  handler: async (ctx, { name, isPublic }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new ConvexError(copy.errors.signInFirst);
-    return await ctx.db.insert("categories", {
-      userId,
-      name: validateName(name),
-      isPublic,
-    });
-  },
-});
-
-export const update = mutation({
-  args: {
-    id: v.id("categories"),
-    name: v.optional(v.string()),
-    isPublic: v.optional(v.boolean()),
-  },
-  handler: async (ctx, { id, name, isPublic }) => {
-    await requireOwnCategory(ctx, id);
-    await ctx.db.patch(id, {
-      ...(name !== undefined ? { name: validateName(name) } : {}),
-      ...(isPublic !== undefined ? { isPublic } : {}),
-    });
-  },
-});
-
-export const remove = mutation({
-  args: { id: v.id("categories") },
-  handler: async (ctx, { id }) => {
-    await requireOwnCategory(ctx, id);
-    // Past focus time lives in dailyStats, so history survives deletion.
-    await ctx.db.delete(id);
+    return rows
+      .filter((c) => c.deleted !== true)
+      .map((c) => ({
+        clientId: c.clientId ?? c._id,
+        name: c.name,
+        isPublic: c.isPublic,
+        updatedAt: c.updatedAt ?? c._creationTime,
+      }));
   },
 });
