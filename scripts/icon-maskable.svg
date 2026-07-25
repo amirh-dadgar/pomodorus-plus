@@ -1,7 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Maskable/apple variant: full-bleed black (the platform applies its own
-       mask), tomato shrunk into the 80% safe zone. -->
-  <rect x="0" y="0" width="512" height="512" fill="#000000" />
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3a3c" />
+      <stop offset="0.5" stop-color="#1c1c1e" />
+      <stop offset="1" stop-color="#000000" />
+    </linearGradient>
+  </defs>
+  <!-- Maskable/apple variant: full-bleed gradient (the platform applies its
+       own mask), tomato shrunk into the 80% safe zone. -->
+  <rect x="0" y="0" width="512" height="512" fill="url(#bg)" />
   <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"
      transform="translate(256 256) scale(0.78) translate(-256 -256)">
     <ellipse cx="256" cy="308" rx="132" ry="118" />
