@@ -1,16 +1,16 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/convex/_generated/api";
 import { copy } from "@/lib/copy";
+import { useLocalIdentity } from "@/lib/local/hooks";
 
 export function AppHeader() {
   const { signOut } = useAuthActions();
   const router = useRouter();
-  const username = useQuery(api.profiles.me);
+  // Cached locally by the SyncEngine, so the header works offline too.
+  const username = useLocalIdentity();
 
   return (
     <header className="mx-auto flex w-full max-w-lg items-center justify-between p-6 pb-0">
@@ -27,7 +27,7 @@ export function AppHeader() {
           type="button"
           className="hover:text-foreground"
           onClick={async () => {
-            await signOut();
+            await signOut().catch(() => {});
             router.push("/");
           }}
         >

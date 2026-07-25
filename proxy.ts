@@ -5,8 +5,9 @@ import {
 } from "@convex-dev/auth/nextjs/server";
 
 const isLoginPage = createRouteMatcher(["/login"]);
-// Landing, login, and public profiles are open to signed-out visitors.
-const isPublicPage = createRouteMatcher(["/", "/login", "/u/(.*)"]);
+// Landing, login, public profiles, and the service worker's offline
+// fallback page are open to signed-out visitors.
+const isPublicPage = createRouteMatcher(["/", "/login", "/u/(.*)", "/offline"]);
 
 export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   const authenticated = await convexAuth.isAuthenticated();

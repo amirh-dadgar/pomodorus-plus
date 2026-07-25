@@ -6,9 +6,11 @@ import { useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { copy } from "@/lib/copy";
 import { faClock } from "@/lib/format";
+import { useOnline } from "@/lib/local/hooks";
 
 export function Feed() {
   const feed = useQuery(api.sessions.activeFeed);
+  const online = useOnline();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -16,13 +18,26 @@ export function Feed() {
     return () => clearInterval(timer);
   }, []);
 
-  if (!feed || feed.length === 0) return null;
+  // The feed is live-only; offline it degrades to an honest little notice.
+  if (!online) {
+    return (
+      <section className="w-full space-y-3 border-t pt-6">
+        <h2 className="text-sm font-medium text-muted-foreground">{copy.feed.title}</h2>
+        <p className="text-sm text-muted-foreground">{copy.offline.feedOffline}</p>
+      </section>
+    );
+  }
+
+  // Presence rows self-expire at their end time; drop the ones the server
+  // hasn't re-evaluated yet.
+  const active = (feed ?? []).filter((e) => e.startedAt + e.durationMs > now);
+  if (active.length === 0) return null;
 
   return (
     <section className="w-full space-y-3 border-t pt-6">
       <h2 className="text-sm font-medium text-muted-foreground">{copy.feed.title}</h2>
       <ul className="space-y-2">
-        {feed.map((entry) => {
+        {active.map((entry) => {
           const remainingMs = Math.min(entry.startedAt + entry.durationMs - now, entry.durationMs);
           const isBreak = entry.kind !== "work";
           return (

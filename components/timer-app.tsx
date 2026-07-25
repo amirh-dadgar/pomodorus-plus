@@ -1,25 +1,19 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth } from "convex/react";
 import { useEffect, useRef, useState } from "react";
-import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { copy, t } from "@/lib/copy";
-import { faClock, faDigits, faDuration } from "@/lib/format";
+import { faClock, faDigits } from "@/lib/format";
 import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
+import { OfflineIndicator } from "@/components/offline-indicator";
 import { Minus, Play, Plus, SkipForward, X } from "lucide-react";
-import type { Id } from "@/convex/_generated/dataModel";
+import { useLocalIdentity, useLocalState, useTimerNow } from "@/lib/local/hooks";
+import { cancelWork, effectiveCategories, skipBreak, startWork } from "@/lib/local/store";
+import { endAt, type SessionKind } from "@/lib/local/types";
 
-type Running = {
-  id: Id<"sessions">;
-  kind: "work" | "shortBreak" | "longBreak";
-  startedAt: number;
-  durationMs: number;
-  categoryName: string | null;
-};
-
-const KIND_LABEL: Record<Running["kind"], string> = {
+const KIND_LABEL: Record<SessionKind, string> = {
   work: copy.timer.kindWork,
   shortBreak: copy.timer.kindShortBreak,
   longBreak: copy.timer.kindLongBreak,
@@ -28,19 +22,15 @@ const KIND_LABEL: Record<Running["kind"], string> = {
 type DurationChoice = 25 | 55;
 
 export function TimerApp() {
-  const state = useQuery(api.sessions.myState);
-  const startWork = useMutation(api.sessions.startWork);
-  const cancelWork = useMutation(api.sessions.cancelWork);
-  const skipBreak = useMutation(api.sessions.skipBreak);
+  // The timer is local-first: everything below renders from the local
+  // store; the server is only involved via the SyncEngine in the layout.
+  const identity = useLocalIdentity();
+  const state = useLocalState();
+  const { isAuthenticated } = useConvexAuth();
+  const now = useTimerNow();
 
-  const [now, setNow] = useState(() => Date.now());
-  const [categoryId, setCategoryId] = useState<Id<"categories"> | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [choice, setChoice] = useState<DurationChoice>(25);
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 500);
-    return () => clearInterval(timer);
-  }, []);
 
   // Ask for notification permission once, right after login.
   useEffect(() => {
@@ -49,11 +39,8 @@ export function TimerApp() {
     }
   }, []);
 
-  const running = state?.running ?? null;
-  // Clamp for clock skew: the server's startedAt can be ahead of local time.
-  const remainingMs = running
-    ? Math.min(running.startedAt + running.durationMs - now, running.durationMs)
-    : null;
+  const running = state.running;
+  const remainingMs = running ? Math.max(0, endAt(running) - now) : null;
 
   // Live countdown in the tab title.
   useEffect(() => {
@@ -66,22 +53,19 @@ export function TimerApp() {
     };
   }, [running, remainingMs]);
 
-  // Notify + ding when a session completes. Driven by the server's
-  // lastEnded (only naturally-completed sessions land there — cancels and
-  // skips don't), so it also works for devFast sessions that end with most
-  // of their nominal duration left.
-  const lastEnded = state?.lastEnded ?? null;
+  // Notify + ding when a session completes. Driven by the local lastEnded
+  // (cancels and skips don't set it), so it fires offline too. Completions
+  // settled retroactively — from a period the app was closed — are stale
+  // and stay silent.
+  const lastEnded = state.lastEnded;
   const seenEndedId = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    if (state === undefined) return;
-    // First loaded state: remember where we are, don't notify for the past.
     if (seenEndedId.current === undefined) {
       seenEndedId.current = lastEnded?.id ?? null;
       return;
     }
     if (!lastEnded || lastEnded.id === seenEndedId.current) return;
     seenEndedId.current = lastEnded.id;
-    // Ignore completions that happened while the tab wasn't around.
     if (Date.now() - lastEnded.at > 60_000) return;
     playDing();
     if ("Notification" in window && Notification.permission === "granted") {
@@ -97,16 +81,17 @@ export function TimerApp() {
         });
       }
     }
-  }, [state, lastEnded]);
+  }, [lastEnded]);
 
-  if (state === undefined) {
+  // No cached identity: either the first online visit is still loading the
+  // username, or this device has never signed in and is offline.
+  if (identity === null) {
     return (
-      <div className="flex flex-1 items-center justify-center text-muted-foreground">
-        …
+      <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
+        {isAuthenticated ? "…" : copy.offline.needInternet}
       </div>
     );
   }
-  if (state === null) return null;
 
   // cycleCount stays at 4 during the long break, then resets to 0.
   const cycleDots = Array.from(
@@ -120,7 +105,9 @@ export function TimerApp() {
         <section className="flex w-full flex-col items-center gap-6">
           <p className="text-muted-foreground">
             {running.kind === "work"
-              ? (running.categoryName ?? copy.timer.privateTask)
+              ? (effectiveCategories(state).find(
+                  (c) => c.clientId === running.categoryClientId,
+                )?.name ?? copy.timer.privateTask)
               : KIND_LABEL[running.kind]}
           </p>
           <p
@@ -143,7 +130,11 @@ export function TimerApp() {
           {running.kind === "work" ? (
             <Button
               variant="outline"
-              onClick={() => cancelWork().catch(() => {})}
+              onClick={() => {
+                try {
+                  cancelWork();
+                } catch {}
+              }}
             >
               <X />
               {copy.timer.cancelWork}
@@ -151,7 +142,11 @@ export function TimerApp() {
           ) : (
             <Button
               variant="outline"
-              onClick={() => skipBreak().catch(() => {})}
+              onClick={() => {
+                try {
+                  skipBreak();
+                } catch {}
+              }}
             >
               <SkipForward />
               {copy.timer.skipBreak}
@@ -199,12 +194,13 @@ export function TimerApp() {
                   Notification.requestPermission();
                 }
                 if (categoryId !== null) {
-                  const isDev = process.env.NODE_ENV === "development";
-                  startWork({
-                    categoryId,
-                    minutes: choice,
-                    ...(isDev ? { fast: true } : {}),
-                  }).catch(() => {});
+                  try {
+                    startWork(
+                      categoryId,
+                      choice,
+                      process.env.NODE_ENV === "development",
+                    );
+                  } catch {}
                 }
               }}
             >
@@ -214,6 +210,7 @@ export function TimerApp() {
           </section>
         </div>
       )}
+      <OfflineIndicator />
     </div>
   );
 }

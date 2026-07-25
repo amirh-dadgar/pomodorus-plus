@@ -1,15 +1,20 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { ArrowRight, Check, ChevronsUpDown, Pencil, Plus } from "lucide-react";
-import { api } from "@/convex/_generated/api";
-import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { copy, t } from "@/lib/copy";
+import { useLocalState } from "@/lib/local/hooks";
+import {
+  createCategory,
+  deleteCategory,
+  effectiveCategories,
+  updateCategory,
+} from "@/lib/local/store";
+import type { Category } from "@/lib/local/types";
 import {
   Command,
   CommandEmpty,
@@ -17,7 +22,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command";
 import {
   Dialog,
@@ -29,22 +33,24 @@ import {
 type View =
   | { name: "picker" }
   | { name: "create" }
-  | { name: "edit"; category: Doc<"categories"> };
+  | { name: "edit"; category: Category };
 
 export function CategoryPicker({
   selected,
   onSelect,
 }: {
-  selected: Id<"categories"> | null;
-  onSelect: (id: Id<"categories"> | null) => void;
+  selected: string | null;
+  onSelect: (id: string | null) => void;
 }) {
-  const categories = useQuery(api.categories.list) ?? [];
-  const create = useMutation(api.categories.create);
+  // Local-first: the list is the cached server mirror with pending local
+  // edits applied, and every write goes through the local queue — so the
+  // picker behaves identically online and offline.
+  const categories = effectiveCategories(useLocalState());
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>({ name: "picker" });
   const [search, setSearch] = useState("");
 
-  const selectedCategory = categories.find((c) => c._id === selected) ?? null;
+  const selectedCategory = categories.find((c) => c.clientId === selected) ?? null;
 
   const backToPicker = () => setView({ name: "picker" });
 
@@ -56,16 +62,13 @@ export function CategoryPicker({
     setSearch("");
   }
 
-  async function createFromSearch() {
+  function createFromSearch() {
     const trimmed = search.trim();
     if (!trimmed) return;
-    const id = await create({ name: trimmed, isPublic: true }).catch(
-      () => null,
-    );
-    if (id) {
-      onSelect(id);
+    try {
+      onSelect(createCategory(trimmed, true));
       closeAndReset();
-    }
+    } catch {}
   }
 
   return (
@@ -140,17 +143,17 @@ export function CategoryPicker({
                   <CommandGroup className="p-2 border">
                     {categories.map((category) => (
                       <CommandItem
-                        key={category._id}
+                        key={category.clientId}
                         value={category.name}
                         className="[&>svg:last-child]:hidden"
                         onSelect={() => {
-                          onSelect(category._id);
+                          onSelect(category.clientId);
                           closeAndReset();
                         }}
                       >
                         <Check
                           className={
-                            selected === category._id
+                            selected === category.clientId
                               ? "opacity-100"
                               : "opacity-0"
                           }
@@ -203,10 +206,12 @@ export function CategoryPicker({
 
           {view.name === "edit" && (
             <EditView
-              key={view.category._id}
+              key={view.category.clientId}
               category={view.category}
               onBack={backToPicker}
-              onDeleted={() => selected === view.category._id && onSelect(null)}
+              onDeleted={() =>
+                selected === view.category.clientId && onSelect(null)
+              }
             />
           )}
         </DialogContent>
@@ -236,17 +241,17 @@ function CreateView({
   onCreated,
 }: {
   onBack: () => void;
-  onCreated: (id: Id<"categories">) => void;
+  onCreated: (id: string) => void;
 }) {
-  const create = useMutation(api.categories.create);
   const [name, setName] = useState("");
   const [isPublic, setIsPublic] = useState(true);
 
-  async function handleCreate() {
+  function handleCreate() {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const id = await create({ name: trimmed, isPublic }).catch(() => null);
-    if (id) onCreated(id);
+    try {
+      onCreated(createCategory(trimmed, isPublic));
+    } catch {}
   }
 
   return (
@@ -290,12 +295,10 @@ function EditView({
   onBack,
   onDeleted,
 }: {
-  category: Doc<"categories">;
+  category: Category;
   onBack: () => void;
   onDeleted: () => void;
 }) {
-  const update = useMutation(api.categories.update);
-  const remove = useMutation(api.categories.remove);
   const [name, setName] = useState(category.name);
   const [isPublic, setIsPublic] = useState(category.isPublic);
 
@@ -312,13 +315,13 @@ function EditView({
         />
         <div className="flex items-center justify-between">
           <Label
-            htmlFor={`public-${category._id}`}
+            htmlFor={`public-${category.clientId}`}
             className="text-sm text-muted-foreground"
           >
             {copy.categories.publicLabel}
           </Label>
           <Switch
-            id={`public-${category._id}`}
+            id={`public-${category.clientId}`}
             checked={isPublic}
             onCheckedChange={setIsPublic}
           />
@@ -327,12 +330,10 @@ function EditView({
           <Button
             size="sm"
             disabled={!name.trim()}
-            onClick={async () => {
-              await update({
-                id: category._id,
-                name: name.trim(),
-                isPublic,
-              }).catch(() => {});
+            onClick={() => {
+              try {
+                updateCategory(category.clientId, name.trim(), isPublic);
+              } catch {}
               onBack();
             }}
           >
@@ -342,9 +343,11 @@ function EditView({
             size="sm"
             variant="outline"
             className="text-muted-foreground"
-            onClick={async () => {
-              await remove({ id: category._id }).catch(() => {});
-              onDeleted();
+            onClick={() => {
+              try {
+                deleteCategory(category.clientId);
+                onDeleted();
+              } catch {}
               onBack();
             }}
           >

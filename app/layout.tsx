@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
+import { SwRegister } from "@/components/sw-register";
+import { SyncEngine } from "@/components/sync-engine";
 import { copy } from "@/lib/copy";
 
 const peyda = localFont({
@@ -26,6 +28,10 @@ export const metadata: Metadata = {
   description: copy.app.description,
 };
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +41,11 @@ export default function RootLayout({
     <ConvexAuthNextjsServerProvider>
       <html lang="fa" dir="rtl" className={`${peyda.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <SyncEngine />
+            <SwRegister />
+            {children}
+          </ConvexClientProvider>
         </body>
       </html>
     </ConvexAuthNextjsServerProvider>

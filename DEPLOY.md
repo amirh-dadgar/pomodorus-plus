@@ -4,7 +4,8 @@ The Convex production side is **already deployed and configured**, so the first 
 
 ## Current production state
 
-- Convex production deployment: `tacit-clam-994` (`https://tacit-clam-994.convex.cloud`), with the current functions/schema deployed.
+- Convex production deployment: `tacit-clam-994` (`https://tacit-clam-994.convex.cloud`).
+- **Pending:** the local-first sync rework (new `presence` table, `sync.push`, schema changes) is deployed to dev only — run `npx convex deploy` before/with the next Vercel deploy, or old clients' scheduled `finalize` jobs and the new app will disagree.
 - Auth (`JWT_PRIVATE_KEY`, `JWKS`) is configured on it, and `SITE_URL` is set to `https://pomodorus.vercel.app` (adjust below if your URL differs).
 - `.env.production` (committed) pins `NEXT_PUBLIC_CONVEX_URL` to the production deployment, so a plain `npm run build` on Vercel connects to production Convex with no dashboard env vars.
 - `DEV_FAST_POMODORO` is **not** set on production — the 3-second test sessions are rejected there. Keep it that way.
@@ -20,6 +21,13 @@ The Convex production side is **already deployed and configured**, so the first 
    ```
 
    Applies immediately, no redeploy needed.
+
+## PWA / offline notes
+
+- The service worker (`public/sw.js`) registers **in production builds only** — `next dev` never caches. To test offline behavior locally: `npm run build && npm start`, visit once signed in, then go offline.
+- The timer is local-first (`docs/adr/0001-local-first-timer.md`): sessions complete on the device and sync to Convex via `sync.push` whenever the client is online. The feed reads best-effort `presence` rows.
+- After changing cached assets or the caching strategy, bump `VERSION` in `public/sw.js` so installed clients refresh.
+- Install on macOS: open the deployed site in Chrome → address-bar install icon (or Safari → File → Add to Dock). The installed app opens at `/app`.
 
 ## Sanity checklist after deploy
 
