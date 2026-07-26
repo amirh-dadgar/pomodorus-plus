@@ -104,7 +104,13 @@
       "Bash(node consistency.mjs)",
       "Bash(node dialog.mjs)",
       "Bash(git -C /root/pomodorus diff --stat)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git commit *)",
+      "Bash(git merge *)",
+      "Bash(git stash *)",
+      "Bash(git fetch *)",
+      "Bash(git reset *)",
+      "Bash(git ls-remote *)"
     ]
   }
 }
