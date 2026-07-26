@@ -38,11 +38,11 @@ export function NavBar() {
           <Button asChild variant="outline">
             <Link
               href="/app"
-              className="font-mono tabular-nums hover:text-foreground w-20"
+              className="font-mono tabular-nums hover:text-foreground"
               dir="ltr"
             >
               <Scan size={15} className="text-rose-500 animate-pulse" />
-              {faClock(remainingMs)}
+              <div className="w-14">{faClock(remainingMs)}</div>
             </Link>
           </Button>
         )}
