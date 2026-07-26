@@ -7,7 +7,8 @@ import { useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { DayCard } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
-import { ScreenshotButton } from "@/components/screenshot-button";
+// Parked, not dropped: the button and lib/card-png.ts still build.
+// import { ScreenshotButton } from "@/components/screenshot-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy, t } from "@/lib/copy";
@@ -127,17 +128,21 @@ export function Profile({ username, banners }: { username: string; banners: stri
                 <FocusChart days={days} selectedKey={selectedKey} onSelect={setHovered} />
               </div>
 
-              {/* A constant key, so the card fades once on the way in and once
-                  on the way out — moving between two days that both have data
-                  swaps the contents without restarting the fade. */}
-              <AnimatePresence>
+              {/* Keyed by day, so moving between two days fades as well —
+                  every card is its own arrival and departure. `wait` holds the
+                  incoming one until the outgoing has gone: the two cards differ
+                  in height with the category list, and running them together
+                  would shunt the page around mid-fade. */}
+              <AnimatePresence mode="wait">
                 {selected && (
                   <motion.div
-                    key="day-card"
+                    key={selected.dayKey}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    // Short, because a scrub crosses a lot of days and each one
+                    // costs a fade out plus a fade in.
+                    transition={{ duration: 0.15, ease: "easeOut" }}
                   >
                     <DayCard
                       ref={cardRef}
@@ -145,7 +150,7 @@ export function Profile({ username, banners }: { username: string; banners: stri
                       username={profile.username}
                       banners={banners}
                     />
-                    <ScreenshotButton target={cardRef} dayKey={selected.dayKey} />
+                    {/* <ScreenshotButton target={cardRef} dayKey={selected.dayKey} /> */}
                   </motion.div>
                 )}
               </AnimatePresence>
