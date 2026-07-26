@@ -16,9 +16,8 @@ export function Landing() {
     <main className="flex flex-1 flex-col p-6">
       <section className="flex flex-col items-center gap-4 pt-20 pb-16 text-center">
         <Timer className="size-10 text-muted-foreground" aria-hidden />
-        <h1 className="text-4xl font-black tracking-tight">{copy.landing.tagline}</h1>
-        <p className="text-sm leading-7 text-muted-foreground">{copy.landing.sub}</p>
-        <Button asChild size="lg" className="mt-2">
+        <h1 className="text-4xl tracking-tight">{copy.landing.tagline}</h1>
+        <Button asChild variant="default">
           <Link href={target}>{cta}</Link>
         </Button>
       </section>
