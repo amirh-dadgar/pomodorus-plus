@@ -89,12 +89,13 @@ export function DayCard({
       <div className="flex items-stretch gap-4">
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <h3 className="truncate text-xs text-muted-foreground">{faDate(day.dayKey)}</h3>
-          <p className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-5xl leading-none font-bold sm:text-6xl">
-              {faHourClock(day.totalMs)}
-            </span>
-            <span className="text-sm text-muted-foreground">{copy.profile.hoursUnit}</span>
+          {/* The unit sits under the clock rather than beside it: a bare h:mm
+              says nothing about what was counted, and at this size there is no
+              room alongside on a phone. */}
+          <p className="mt-1 text-5xl leading-none font-bold sm:text-6xl">
+            {faHourClock(day.totalMs)}
           </p>
+          <p className="mt-1.5 text-xs text-muted-foreground">{copy.profile.focusedHours}</p>
         </div>
         <div className="relative aspect-square w-1/2 shrink-0 overflow-hidden bg-secondary">
           {src !== null && (

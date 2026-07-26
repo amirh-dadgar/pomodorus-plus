@@ -27,6 +27,7 @@ function ChartAreaSkeleton() {
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
             <Skeleton className="h-3 w-32" />
             <Skeleton className="h-12 w-28" />
+            <Skeleton className="h-3 w-24" />
           </div>
           <Skeleton className="aspect-square w-1/2 shrink-0" />
         </div>
