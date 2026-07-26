@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
+import { Banner } from "@/components/banner";
 import { FocusChart } from "@/components/focus-chart";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,7 +47,7 @@ function ChartAreaSkeleton() {
   );
 }
 
-export function Profile({ username }: { username: string }) {
+export function Profile({ username, banners }: { username: string; banners: string[] }) {
   const [range, setRange] = useState<Range>(7);
   const [hovered, setHovered] = useState<string | null>(null);
   const live = useQuery(api.profiles.chart, { username, days: range });
@@ -122,6 +123,10 @@ export function Profile({ username }: { username: string }) {
             <>
               <div className="mt-4">
                 <FocusChart days={days} selectedKey={selectedKey} onSelect={setHovered} />
+              </div>
+
+              <div className="mt-6">
+                <Banner banners={banners} />
               </div>
 
               {selected && (
