@@ -85,7 +85,7 @@ export default function RootLayout({
         dir="rtl"
         className={`${peyda.variable} h-full antialiased`}
       >
-        <body className="min-h-screen flex flex-col md:bg-stone-950">
+        <body className="min-h-screen flex flex-col lg:bg-stone-950">
           <ConvexClientProvider>
             <SyncEngine />
             <SwRegister />
