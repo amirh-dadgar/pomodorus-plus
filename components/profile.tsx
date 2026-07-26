@@ -103,9 +103,6 @@ export function Profile({
         </p>
       ) : (
         <div className="pt-10">
-          <h1 className="text-lg font-bold" dir="ltr">
-            @{profile.username}
-          </h1>
           {profile.isOwner && (
             <p className="mt-2 text-xs text-muted-foreground">
               {copy.profile.ownerNote}

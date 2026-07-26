@@ -11,7 +11,9 @@ type Day = { dayKey: string; totalMs: number; slices: Slice[] };
 
 function sliceLabel(slice: Slice): string {
   if (slice.name !== undefined) return slice.name;
-  return slice.bucket === "private" ? copy.profile.privateBucket : copy.profile.noTask;
+  return slice.bucket === "private"
+    ? copy.profile.privateBucket
+    : copy.profile.noTask;
 }
 
 // The pick never changes after mount, so there is nothing to subscribe to.
@@ -89,7 +91,9 @@ export function DayCard({
           which is where the total belongs; the image trails on the left. */}
       <div className="flex items-stretch gap-4">
         <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <h3 className="truncate text-xs text-muted-foreground">{faDate(day.dayKey)}</h3>
+          <h3 className="truncate text-xs text-muted-foreground">
+            {faDate(day.dayKey)}
+          </h3>
           {/* The unit sits under the clock rather than beside it: a bare h:mm
               says nothing about what was counted, and at this size there is no
               room alongside on a phone. */}
@@ -98,9 +102,12 @@ export function DayCard({
           </p>
           {/* Set like the clock, not like a caption: the two read as one
               phrase, so the unit should not look like a footnote to it. */}
-          <p className="mt-1.5 text-lg font-bold">{copy.profile.focusedHours}</p>
+          <p className="mt-1.5 text-lg font-bold">
+            {copy.profile.focusedHours}
+          </p>
         </div>
-        <div className="relative aspect-square w-1/2 shrink-0 overflow-hidden bg-secondary">
+        <div className="relative relative aspect-square w-1/2 shrink-0 overflow-hidden bg-secondary">
+          <div className="absolute inset-0 z-10 bg-linear-to-t from-background to-transparent" />
           {src !== null && (
             <Image
               src={src}
@@ -120,10 +127,16 @@ export function DayCard({
         {day.slices.map((slice) => (
           <li key={sliceLabel(slice)}>
             <div className="flex items-baseline justify-between gap-3 text-xs">
-              <span className={slice.name === undefined ? "text-muted-foreground" : ""}>
+              <span
+                className={
+                  slice.name === undefined ? "text-muted-foreground" : ""
+                }
+              >
                 {sliceLabel(slice)}
               </span>
-              <span className="shrink-0 text-muted-foreground">{faDuration(slice.ms)}</span>
+              <span className="shrink-0 text-muted-foreground">
+                {faDuration(slice.ms)}
+              </span>
             </div>
             <div className="mt-1.5 h-1 w-full bg-secondary">
               <div
