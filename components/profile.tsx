@@ -47,7 +47,13 @@ function ChartAreaSkeleton() {
   );
 }
 
-export function Profile({ username, banners }: { username: string; banners: string[] }) {
+export function Profile({
+  username,
+  banners,
+}: {
+  username: string;
+  banners: string[];
+}) {
   const [range, setRange] = useState<Range>(7);
   const [hovered, setHovered] = useState<string | null>(null);
   const live = useQuery(api.profiles.chart, { username, days: range });
@@ -66,11 +72,14 @@ export function Profile({ username, banners }: { username: string; banners: stri
   // Hover wins while it points inside the range; otherwise the panel rests on
   // the most recent day that has data.
   const selectedKey =
-    hovered && days.some((d) => d.dayKey === hovered) ? hovered : lastWithData?.dayKey;
+    hovered && days.some((d) => d.dayKey === hovered)
+      ? hovered
+      : lastWithData?.dayKey;
   // A day with nothing on it has no card: the chart is zero-filled, so pointing
   // at a flat stretch would otherwise dwell on ۰:۰۰ under an empty bar list.
   const pointed = days.find((d) => d.dayKey === selectedKey);
-  const selected = pointed !== undefined && pointed.totalMs > 0 ? pointed : undefined;
+  const selected =
+    pointed !== undefined && pointed.totalMs > 0 ? pointed : undefined;
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col p-6">
@@ -89,14 +98,18 @@ export function Profile({ username, banners }: { username: string; banners: stri
           <ChartAreaSkeleton />
         </div>
       ) : profile === null ? (
-        <p className="pt-20 text-center text-sm text-muted-foreground">{copy.profile.notFound}</p>
+        <p className="pt-20 text-center text-sm text-muted-foreground">
+          {copy.profile.notFound}
+        </p>
       ) : (
         <div className="pt-10">
           <h1 className="text-lg font-bold" dir="ltr">
             @{profile.username}
           </h1>
           {profile.isOwner && (
-            <p className="mt-2 text-xs text-muted-foreground">{copy.profile.ownerNote}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {copy.profile.ownerNote}
+            </p>
           )}
 
           <div className="mt-8 flex items-center justify-between gap-3">
@@ -122,11 +135,17 @@ export function Profile({ username, banners }: { username: string; banners: stri
           {rangeLoading ? (
             <ChartAreaSkeleton />
           ) : lastWithData === undefined ? (
-            <p className="mt-6 text-sm text-muted-foreground">{copy.profile.empty}</p>
+            <p className="mt-6 text-sm text-muted-foreground">
+              {copy.profile.empty}
+            </p>
           ) : (
             <>
               <div className="mt-4">
-                <FocusChart days={days} selectedKey={selectedKey} onSelect={setHovered} />
+                <FocusChart
+                  days={days}
+                  selectedKey={selectedKey}
+                  onSelect={setHovered}
+                />
               </div>
 
               {/* Keyed by day, so moving between two days fades as well —
@@ -143,7 +162,7 @@ export function Profile({ username, banners }: { username: string; banners: stri
                     exit={{ opacity: 0 }}
                     // Short, because a scrub crosses a lot of days and each one
                     // costs a fade out plus a fade in.
-                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                   >
                     <DayCard
                       ref={cardRef}
