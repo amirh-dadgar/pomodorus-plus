@@ -60,11 +60,13 @@ export default function LoginPage() {
           )}
           <div className="space-y-2">
             <Label htmlFor="email">{copy.login.email}</Label>
-            <Input id="email" name="email" type="email" required dir="ltr" />
+            {/* type="text": any string works as the login identifier ("test" is
+                fine); inputMode keeps the email keyboard on mobile. */}
+            <Input id="email" name="email" type="text" inputMode="email" required dir="ltr" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{copy.login.password}</Label>
-            <Input id="password" name="password" type="password" required minLength={8} dir="ltr" />
+            <Input id="password" name="password" type="password" required dir="ltr" />
           </div>
           {error && <p className="text-sm text-muted-foreground">{error}</p>}
           <Button type="submit" className="w-full" disabled={pending}>

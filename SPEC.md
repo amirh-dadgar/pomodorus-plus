@@ -8,6 +8,7 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 - Convex (database, realtime, server functions)
 - Convex Auth — Password provider only. No email verification, no password reset, no email infrastructure. Email is the private login identifier and is never shown publicly.
 - Signup fields: email, password, **username** (unique, immutable, `[a-z0-9_]{3,20}`; the only public identity — shown in the feed, on profiles, and in profile URLs. There is no display name).
+- No password or email-format constraints: any non-empty strings are accepted as credentials (even `test` / `test`) — casual personal app, no email infrastructure to justify format checks.
 
 ## Look & language
 

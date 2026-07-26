@@ -11,6 +11,13 @@ const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 // `username` is the unique immutable handle shown in the feed and used in
 // profile URLs.
 const PasswordWithProfile = Password({
+  // No password rules — this is a casual personal app; even "test" is fine.
+  // Overrides the provider default, which demands 8+ characters.
+  validatePasswordRequirements(password) {
+    if (password.length === 0) {
+      throw new ConvexError(copy.login.badCredentials);
+    }
+  },
   profile(params) {
     const email = String(params.email ?? "").trim().toLowerCase();
     const username = String(params.username ?? "").trim().toLowerCase();
