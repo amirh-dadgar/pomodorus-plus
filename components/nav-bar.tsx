@@ -42,7 +42,9 @@ export function NavBar() {
               dir="ltr"
             >
               <Scan size={15} className="text-rose-500 animate-pulse" />
-              <div className="w-14">{faClock(remainingMs)}</div>
+              <div className="w-16 flex justify-end">
+                {faClock(remainingMs)}
+              </div>
             </Link>
           </Button>
         )}
