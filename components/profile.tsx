@@ -2,24 +2,18 @@
 
 import { useQuery } from "convex/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
-import { Banner } from "@/components/banner";
+import { DayCard } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
+import { ShareDayButton } from "@/components/share-day-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy, t } from "@/lib/copy";
-import { faDate, faDigits, faDuration } from "@/lib/format";
+import { faDigits } from "@/lib/format";
 
 const RANGES = [7, 30, 90] as const;
 type Range = (typeof RANGES)[number];
-
-type Slice = { name?: string; bucket?: "private" | "none"; ms: number };
-
-function sliceLabel(slice: Slice): string {
-  if (slice.name !== undefined) return slice.name;
-  return slice.bucket === "private" ? copy.profile.privateBucket : copy.profile.noTask;
-}
 
 // Placeholder for the chart + day-detail area, shown while a range loads.
 function ChartAreaSkeleton() {
@@ -27,9 +21,12 @@ function ChartAreaSkeleton() {
     <div>
       <Skeleton className="mt-4 h-44 w-full" />
       <div className="mt-6 border-t pt-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-4 w-24" />
+        <div className="flex items-stretch gap-4">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-12 w-28" />
+          </div>
+          <Skeleton className="aspect-square w-1/2 shrink-0" />
         </div>
         <div className="mt-4 space-y-3">
           {[0, 1, 2].map((i) => (
@@ -51,6 +48,7 @@ export function Profile({ username, banners }: { username: string; banners: stri
   const [range, setRange] = useState<Range>(7);
   const [hovered, setHovered] = useState<string | null>(null);
   const live = useQuery(api.profiles.chart, { username, days: range });
+  const cardRef = useRef<HTMLElement>(null);
 
   // Switching ranges resubscribes the query, which momentarily returns
   // undefined. Keep the last payload so the page shell (username, presets)
@@ -125,39 +123,16 @@ export function Profile({ username, banners }: { username: string; banners: stri
                 <FocusChart days={days} selectedKey={selectedKey} onSelect={setHovered} />
               </div>
 
-              <div className="mt-6">
-                <Banner banners={banners} />
-              </div>
-
               {selected && (
-                <section className="mt-6 min-h-32 border-t pt-4">
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <h3 className="font-medium">{faDate(selected.dayKey)}</h3>
-                    <span className="shrink-0 text-muted-foreground">
-                      {faDuration(selected.totalMs)}
-                    </span>
-                  </div>
-                  <ul className="mt-4 space-y-3">
-                    {selected.slices.map((slice) => (
-                      <li key={sliceLabel(slice)}>
-                        <div className="flex items-baseline justify-between gap-3 text-xs">
-                          <span className={slice.name === undefined ? "text-muted-foreground" : ""}>
-                            {sliceLabel(slice)}
-                          </span>
-                          <span className="shrink-0 text-muted-foreground">
-                            {faDuration(slice.ms)}
-                          </span>
-                        </div>
-                        <div className="mt-1.5 h-1 w-full bg-secondary">
-                          <div
-                            className="h-full bg-chart-1"
-                            style={{ width: `${(slice.ms / selected.totalMs) * 100}%` }}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+                <>
+                  <DayCard
+                    ref={cardRef}
+                    day={selected}
+                    username={profile.username}
+                    banners={banners}
+                  />
+                  <ShareDayButton target={cardRef} dayKey={selected.dayKey} />
+                </>
               )}
             </>
           )}

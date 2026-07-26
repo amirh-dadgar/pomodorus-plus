@@ -23,6 +23,18 @@ export function faDuration(ms: number): string {
   return `${faDigits(hours)} ساعت و ${faDigits(minutes)} دقیقه`;
 }
 
+/**
+ * Total focus time as a bare h:mm clock for display at headline size, e.g.
+ * ۲:۲۵ — the sentence form from `faDuration` is far too long to set big.
+ * Under an hour still reads as a clock: ۴۵ minutes is ۰:۴۵.
+ */
+export function faHourClock(ms: number): string {
+  const totalMinutes = Math.round(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return faDigits(`${hours}:${String(minutes).padStart(2, "0")}`);
+}
+
 const jalali = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
   timeZone: "Asia/Tehran",
   day: "numeric",
