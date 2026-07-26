@@ -4,7 +4,7 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 
 ## Stack
 
-- Next.js (App Router, TypeScript) + Tailwind + shadcn/ui
+- Next.js (App Router, TypeScript) + Tailwind + shadcn/ui, with `motion` for transitions
 - Convex (database, realtime, server functions)
 - Convex Auth — Password provider only. No email verification, no password reset, no email infrastructure. Email is the private login identifier and is never shown publicly.
 - Signup fields: email, password, **username** (unique, immutable, `[a-z0-9_]{3,20}`; the only public identity — shown in the feed, on profiles, and in profile URLs. There is no display name).
@@ -45,7 +45,10 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 - `/` — public landing (no auth): app name, one-line pitch, the live feed, and a header button (signed-in → `/app`, signed-out → `/login`).
 - `/app` — the timer app (auth required).
 - `/u/[username]` — public profile (no auth): username and the **focus chart** — a single minimal line of total focus time per Tehran day over a selected range (presets: last 7/30/90 days, default 7; no custom picker), zero-filled on empty days, Jalali axis labels. Only completed work sessions count; totals and breakdowns are computed from the sessions log.
-- Pointing at the chart (hover or touch drag) selects a day; a docked **day detail** panel below the chart (never a floating tooltip) shows that day's Jalali date, total, and per-category rows sorted largest first, each with a progress bar sized as its share of the day's total. Defaults to the most recent day with data.
+- Pointing at the chart (hover or touch drag) selects a day; a docked **day detail** panel below the chart (never a floating tooltip) shows that day's per-category rows sorted largest first, each with a progress bar sized as its share of the day's total. Defaults to the most recent day with data.
+- The day detail opens with a two-column header: the day's total set as a large `h:mm` clock (with the Jalali date above it as a small label) beside a square image drawn from `public/banners`. The image is picked at random the first time a day is shown and kept for the rest of the visit, so pointing along the chart never reshuffles the art; consecutive draws avoid each other. All images preload, and swaps are instant — no fade.
+- The chart is zero-filled, so a day with no focus time can still be pointed at. It has no day detail: the panel is not rendered at all rather than showing a zero. Appearing and disappearing are cross-faded (`motion`); moving between two days that both have data swaps the contents without re-fading.
+- A button below the day detail downloads it as a PNG for sharing. The image is a capture of the panel as rendered — same layout, font, and art — padded and filled black to match the page, at 3× density. It contains the panel and nothing else: no username, no app name. The button sits outside the captured node so it never appears in its own screenshot.
 - Day-detail privacy: visitors see public category names; all private categories collapse into one masked «تسک خصوصی» row. The owner sees real names everywhere plus a disclaimer that private tasks are hidden from others. Deleted categories keep their preserved name; sessions without a category (and empty-name tombstones) form one unmasked "no task" row.
 - There is no separate private history page; a user's own profile serves that purpose.
 

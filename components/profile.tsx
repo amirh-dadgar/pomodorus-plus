@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
@@ -64,7 +65,10 @@ export function Profile({ username, banners }: { username: string; banners: stri
   // the most recent day that has data.
   const selectedKey =
     hovered && days.some((d) => d.dayKey === hovered) ? hovered : lastWithData?.dayKey;
-  const selected = days.find((d) => d.dayKey === selectedKey);
+  // A day with nothing on it has no card: the chart is zero-filled, so pointing
+  // at a flat stretch would otherwise dwell on ۰:۰۰ under an empty bar list.
+  const pointed = days.find((d) => d.dayKey === selectedKey);
+  const selected = pointed !== undefined && pointed.totalMs > 0 ? pointed : undefined;
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col p-6">
@@ -123,17 +127,28 @@ export function Profile({ username, banners }: { username: string; banners: stri
                 <FocusChart days={days} selectedKey={selectedKey} onSelect={setHovered} />
               </div>
 
-              {selected && (
-                <>
-                  <DayCard
-                    ref={cardRef}
-                    day={selected}
-                    username={profile.username}
-                    banners={banners}
-                  />
-                  <ScreenshotButton target={cardRef} dayKey={selected.dayKey} />
-                </>
-              )}
+              {/* A constant key, so the card fades once on the way in and once
+                  on the way out — moving between two days that both have data
+                  swaps the contents without restarting the fade. */}
+              <AnimatePresence>
+                {selected && (
+                  <motion.div
+                    key="day-card"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                  >
+                    <DayCard
+                      ref={cardRef}
+                      day={selected}
+                      username={profile.username}
+                      banners={banners}
+                    />
+                    <ScreenshotButton target={cardRef} dayKey={selected.dayKey} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </>
           )}
         </div>

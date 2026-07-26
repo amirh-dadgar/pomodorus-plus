@@ -18,6 +18,7 @@
     "convex": "^1.42.3",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.26.0",
+    "motion": "^12.42.2",
     "next": "16.2.11",
     "radix-ui": "^1.6.5",
     "react": "19.2.4",
