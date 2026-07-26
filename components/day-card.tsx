@@ -95,7 +95,9 @@ export function DayCard({
           <p className="mt-1 text-5xl leading-none font-bold sm:text-6xl">
             {faHourClock(day.totalMs)}
           </p>
-          <p className="mt-1.5 text-xs text-muted-foreground">{copy.profile.focusedHours}</p>
+          {/* Set like the clock, not like a caption: the two read as one
+              phrase, so the unit should not look like a footnote to it. */}
+          <p className="mt-1.5 text-base font-bold">{copy.profile.focusedHours}</p>
         </div>
         <div className="relative aspect-square w-1/2 shrink-0 overflow-hidden bg-secondary">
           {src !== null && (
