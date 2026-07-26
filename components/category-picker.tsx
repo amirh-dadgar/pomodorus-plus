@@ -50,7 +50,8 @@ export function CategoryPicker({
   const [view, setView] = useState<View>({ name: "picker" });
   const [search, setSearch] = useState("");
 
-  const selectedCategory = categories.find((c) => c.clientId === selected) ?? null;
+  const selectedCategory =
+    categories.find((c) => c.clientId === selected) ?? null;
 
   const backToPicker = () => setView({ name: "picker" });
 
@@ -109,13 +110,13 @@ export function CategoryPicker({
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg p-20">
           {view.name === "picker" && (
             <>
               <DialogHeader>
                 <DialogTitle>{copy.categories.pick}</DialogTitle>
               </DialogHeader>
-              <Command className="bg-transparent p-0">
+              <Command className="bg-transparent">
                 <div className="mb-2">
                   <CommandInput
                     autoFocus
@@ -196,13 +197,15 @@ export function CategoryPicker({
           )}
 
           {view.name === "create" && (
-            <CreateView
-              onBack={backToPicker}
-              onCreated={(id) => {
-                onSelect(id);
-                closeAndReset();
-              }}
-            />
+            <div>
+              <CreateView
+                onBack={backToPicker}
+                onCreated={(id) => {
+                  onSelect(id);
+                  closeAndReset();
+                }}
+              />
+            </div>
           )}
 
           {view.name === "edit" && (
@@ -225,7 +228,7 @@ function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <DialogHeader className="flex-row items-center gap-1">
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon-sm"
         aria-label={copy.categories.back}
         onClick={onBack}
@@ -256,7 +259,7 @@ function CreateView({
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <BackHeader title={copy.categories.new} onBack={onBack} />
       <div className="flex flex-col gap-4">
         <Input
@@ -287,7 +290,7 @@ function CreateView({
           </Button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -304,7 +307,7 @@ function EditView({
   const [isPublic, setIsPublic] = useState(category.isPublic);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <BackHeader title={copy.categories.editTitle} onBack={onBack} />
       <div className="flex flex-col gap-4">
         <Input
@@ -356,6 +359,6 @@ function EditView({
           </Button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -9,8 +9,17 @@ import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { Minus, Play, Plus, SkipForward, X } from "lucide-react";
-import { useLocalIdentity, useLocalState, useTimerNow } from "@/lib/local/hooks";
-import { cancelWork, effectiveCategories, skipBreak, startWork } from "@/lib/local/store";
+import {
+  useLocalIdentity,
+  useLocalState,
+  useTimerNow,
+} from "@/lib/local/hooks";
+import {
+  cancelWork,
+  effectiveCategories,
+  skipBreak,
+  startWork,
+} from "@/lib/local/store";
 import { endAt, type SessionKind } from "@/lib/local/types";
 
 const KIND_LABEL: Record<SessionKind, string> = {
@@ -127,15 +136,17 @@ export function TimerApp() {
           </div>
           {running.kind === "work" ? (
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => {
                 try {
                   cancelWork();
                 } catch {}
               }}
             >
-              <X />
-              {copy.timer.cancelWork}
+              <div className="flex items-center gap-1">
+                <X size={10} />
+                {copy.timer.cancelWork}
+              </div>
             </Button>
           ) : (
             <Button
@@ -152,10 +163,10 @@ export function TimerApp() {
           )}
         </section>
       ) : (
-        <div className="w-full grid gap-5">
+        <div className="w-full grid">
           <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
 
-          <section className="flex w-full flex-col border p-10 items-center gap-6">
+          <section className="flex w-full flex-col border border-t-0 px-10 py-20 items-center gap-6">
             <div className="flex items-center gap-4" dir="ltr">
               <Button
                 variant="outline"
