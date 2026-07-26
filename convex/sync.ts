@@ -4,6 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import copy from "../lib/copy.json";
 import { WORK_MINUTES } from "./sessions";
+import { tehranDayKey } from "./days";
 
 const MINUTE_MS = 60_000;
 const CLOCK_SKEW_MS = 5 * MINUTE_MS;
@@ -11,12 +12,6 @@ const CLOCK_SKEW_MS = 5 * MINUTE_MS;
 // Dev-only fast sessions are credited at their nominal duration. Gated by
 // the DEV_FAST_POMODORO env var on the deployment so production drops them.
 const fastAllowed = () => process.env.DEV_FAST_POMODORO !== undefined;
-
-// Day bucket in Asia/Tehran (fixed UTC+3:30, Iran abolished DST in 2022).
-const TEHRAN_OFFSET_MS = 3.5 * 60 * MINUTE_MS;
-function tehranDayKey(ts: number): string {
-  return new Date(ts + TEHRAN_OFFSET_MS).toISOString().slice(0, 10);
-}
 
 /**
  * A device's category reference is its client-minted uuid; rows created

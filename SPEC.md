@@ -43,7 +43,9 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 
 - `/` — public landing (no auth): app name, one-line pitch, the live feed, and a header button (signed-in → `/app`, signed-out → `/login`).
 - `/app` — the timer app (auth required).
-- `/u/[username]` — public profile (no auth): username and daily focus history (Jalali date + focus time per day, newest first). Only completed work sessions count.
+- `/u/[username]` — public profile (no auth): username and the **focus chart** — a single minimal line of total focus time per Tehran day over a selected range (presets: last 7/30/90 days, default 7; no custom picker), zero-filled on empty days, Jalali axis labels. Only completed work sessions count; totals and breakdowns are computed from the sessions log.
+- Pointing at the chart (hover or touch drag) selects a day; a docked **day detail** panel below the chart (never a floating tooltip) shows that day's Jalali date, total, and per-category rows sorted largest first, each with a progress bar sized as its share of the day's total. Defaults to the most recent day with data.
+- Day-detail privacy: visitors see public category names; all private categories collapse into one masked «تسک خصوصی» row. The owner sees real names everywhere plus a disclaimer that private tasks are hidden from others. Deleted categories keep their preserved name; sessions without a category (and empty-name tombstones) form one unmasked "no task" row.
 - There is no separate private history page; a user's own profile serves that purpose.
 
 ## Global feed

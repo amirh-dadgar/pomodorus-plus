@@ -24,13 +24,25 @@ The signed-in working surface where sessions are started and run.
 _Avoid_: profile, dashboard
 
 **Profile**:
-A public, read-only page for one user: their identity plus their daily focus history. Publicly accessible without signing in.
+A public, read-only page for one user: their identity plus their focus chart. Publicly accessible without signing in. The owner viewing their own profile additionally sees private category names and a disclaimer that others don't.
 _Avoid_: history page (the profile subsumed it), account page
+
+**Focus chart**:
+The profile's single line of total focus time per day over the selected range, zero-filled on empty days. The only view of focus history on the profile (it replaced the day list).
+_Avoid_: graph, stats, history list
+
+**Range**:
+The window of Tehran-local days the focus chart covers: a preset of the last 7, 30, or 90 days ending today, defaulting to 7. Never a custom from–to span.
+_Avoid_: period, filter
+
+**Day detail**:
+The per-category breakdown of one selected day: each category's focus time as a share of that day's total, largest first. Sessions without a category form their own unmasked bucket; deleted categories keep appearing under their preserved name. Selected by pointing at the chart; defaults to the most recent day with data.
+_Avoid_: tooltip (it is a docked panel, not a floating tooltip), popup
 
 ### Timer
 
 **Category**:
-A user-defined label attached to work sessions (e.g. "درس", "کار"). Public categories show their name in the feed; private ones show as a private task. Owned by one user; not shared. User-facing copy calls it "تسک" (casual register, like "چیل" for break); code and docs say category.
+A user-defined label attached to work sessions (e.g. "درس", "کار"). Public categories show their name in the feed and in profile day details; private ones show as a private task — in a day detail, all private categories collapse into one masked bucket for visitors. Owned by one user; not shared. User-facing copy calls it "تسک" (casual register, like "چیل" for break); code and docs say category.
 _Avoid_: task, tag, project (in code and docs)
 
 **Session**:

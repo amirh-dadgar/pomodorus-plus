@@ -36,3 +36,14 @@ export function faDate(dayKey: string): string {
   // Noon UTC is unambiguously inside the Tehran day.
   return jalali.format(new Date(`${dayKey}T12:00:00Z`));
 }
+
+const jalaliShort = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+  timeZone: "Asia/Tehran",
+  day: "numeric",
+  month: "long",
+});
+
+/** Short Jalali date for chart axis ticks, e.g. «۲ مرداد». */
+export function faDateShort(dayKey: string): string {
+  return jalaliShort.format(new Date(`${dayKey}T12:00:00Z`));
+}
