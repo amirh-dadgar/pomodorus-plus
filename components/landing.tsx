@@ -13,14 +13,7 @@ export function Landing() {
   const cta = isAuthenticated ? copy.landing.goWork : copy.landing.enter;
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col p-6">
-      <header className="flex items-center justify-between">
-        <span className="font-bold tracking-tight">{copy.app.name}</span>
-        <Button asChild size="sm" variant="outline">
-          <Link href={target}>{cta}</Link>
-        </Button>
-      </header>
-
+    <main className="flex flex-1 flex-col p-6">
       <section className="flex flex-col items-center gap-4 pt-20 pb-16 text-center">
         <Timer className="size-10 text-muted-foreground" aria-hidden />
         <h1 className="text-4xl font-black tracking-tight">{copy.landing.tagline}</h1>

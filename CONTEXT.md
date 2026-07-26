@@ -70,6 +70,20 @@ _Avoid_: backup, upload (both suggest the server copy is primary)
 Local data — completed sessions or category changes — the server has not recorded yet. Surfaced only as a subtle indicator; never blocks using the app.
 _Avoid_: pending, dirty, offline data
 
+### Navigation
+
+**NavBar**:
+The single shared navigation bar rendered on all authenticated public pages (Landing, Timer app, Profile). Always shows the app logo (icon only, no text). Conditionally shows a CTA (login/timer link), a profile link, or a timer badge. Auth-dependent buttons render nothing until the auth state resolves — no flash of wrong CTA.
+_Avoid_: header, app header, nav bar (two words)
+
+**Timer badge**:
+A clickable indicator in the NavBar showing the remaining time of a running session (e.g. `۱۸:۴۲`). Navigates to `/app` on tap. Only visible while a session is active. Positioned near the CTA in the nav.
+_Avoid_: timer indicator, countdown badge
+
+**Content frame**:
+The page-level visual container: a centered column (max-w-lg) with thin left/right borders on `md+` screens, surrounded by a dark stone background on desktop. Borders and stone background are hidden on mobile, leaving a flush black surface. The frame fills the viewport at minimum (`min-h-screen`).
+_Avoid_: page wrapper, layout shell
+
 ### Copy
 
 **Copy**:

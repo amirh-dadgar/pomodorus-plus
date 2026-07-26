@@ -9,7 +9,7 @@ import { copy } from "@/lib/copy";
 // components so it stays a fully static page.
 export default function OfflinePage() {
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+    <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="text-2xl font-black tracking-tight">{copy.offline.pageTitle}</h1>
       <p className="text-sm leading-7 text-muted-foreground">{copy.offline.pageBody}</p>
       {/* buttonVariants rather than <Button asChild>: keeps the CTA on the

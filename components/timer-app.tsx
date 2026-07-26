@@ -98,7 +98,7 @@ export function TimerApp() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center p-6">
+    <div className="flex flex-1 flex-col items-center justify-center p-6">
       {running && remainingMs !== null ? (
         <section className="flex w-full flex-col items-center gap-6">
           <p className="text-muted-foreground">

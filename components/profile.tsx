@@ -2,7 +2,6 @@
 
 import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { DayCard } from "@/components/day-card";
@@ -82,12 +81,7 @@ export function Profile({
     pointed !== undefined && pointed.totalMs > 0 ? pointed : undefined;
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col p-6">
-      <header className="flex items-center justify-between">
-        <Link href="/" className="font-bold tracking-tight">
-          {copy.app.name}
-        </Link>
-      </header>
+    <main className="flex flex-1 flex-col p-6">
       {profile === undefined ? (
         <div className="pt-10">
           <Skeleton className="h-7 w-36" />
