@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { DayCard } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
-import { ShareDayButton } from "@/components/share-day-button";
+import { ScreenshotButton } from "@/components/screenshot-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy, t } from "@/lib/copy";
@@ -131,7 +131,7 @@ export function Profile({ username, banners }: { username: string; banners: stri
                     username={profile.username}
                     banners={banners}
                   />
-                  <ShareDayButton target={cardRef} dayKey={selected.dayKey} />
+                  <ScreenshotButton target={cardRef} dayKey={selected.dayKey} />
                 </>
               )}
             </>

@@ -4,16 +4,15 @@ import { Camera, Loader2 } from "lucide-react";
 import { useState, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/lib/copy";
-import { shareCard } from "@/lib/share-card";
+import { downloadCard } from "@/lib/card-png";
 
 /**
- * Saves the day card next to it as a PNG. It deliberately sits outside the
+ * Downloads the day card next to it as a PNG. It deliberately sits outside the
  * captured node so it can never end up inside its own screenshot.
  *
- * Failures stay quiet: a dismissed share sheet and a capture that fell over are
- * indistinguishable from here, and this page has nowhere to put an error.
+ * A failed capture stays quiet — this page has nowhere to put an error.
  */
-export function ShareDayButton({
+export function ScreenshotButton({
   target,
   dayKey,
 }: {
@@ -28,7 +27,7 @@ export function ShareDayButton({
     setBusy(true);
     try {
       // The Jalali date belongs on the card, not in a filename.
-      await shareCard(node, `pomodorus-${dayKey}.png`);
+      await downloadCard(node, `pomodorus-${dayKey}.png`);
     } catch {
       // Nothing to say, and nowhere to say it.
     } finally {

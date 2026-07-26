@@ -1,6 +1,6 @@
-// Turns a day detail on the profile into a PNG the visitor can post. The card
-// in the image is the card on the page — same layout, same font, same art —
-// so nothing here composes a separate "share" design.
+// Downloads a day detail from the profile as a PNG the visitor can post. The
+// card in the image is the card on the page — same layout, same font, same
+// art — so nothing here composes a separate design for it.
 
 // The profile's own p-6, mirrored around the capture so the PNG carries the
 // margins the card has on screen rather than reading as a too-tight crop.
@@ -64,34 +64,15 @@ async function renderCard(node: HTMLElement): Promise<Blob | null> {
   }
 }
 
-function download(blob: Blob, filename: string): void {
+/** Capture `node` and save it to the visitor's downloads. */
+export async function downloadCard(node: HTMLElement, filename: string): Promise<void> {
+  const blob = await renderCard(node);
+  if (blob === null) return;
+
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
-}
-
-/**
- * Capture `node` and hand it to the platform: the native share sheet where one
- * exists, a download everywhere else. Desktop browsers largely refuse file
- * shares, and Safari can reject a share whose user gesture went stale while the
- * capture ran — both fall through to the download.
- */
-export async function shareCard(node: HTMLElement, filename: string): Promise<void> {
-  const blob = await renderCard(node);
-  if (blob === null) return;
-  const file = new File([blob], filename, { type: "image/png" });
-
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file] });
-      return;
-    } catch (error) {
-      // Closing the sheet is a finished interaction, not a reason to download.
-      if (error instanceof DOMException && error.name === "AbortError") return;
-    }
-  }
-  download(blob, filename);
 }

@@ -65,7 +65,7 @@ function usePreloadedBanners(banners: string[]) {
 
 /**
  * One day's detail: the headline total beside that day's image, then the
- * per-category breakdown. This is exactly what `shareCard` captures, so
+ * per-category breakdown. This is exactly what `downloadCard` captures, so
  * anything that should not appear in a shared PNG belongs outside it.
  */
 export function DayCard({
