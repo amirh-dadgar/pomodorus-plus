@@ -106,7 +106,7 @@ export function DayCard({
             {copy.profile.focusedHours}
           </p>
         </div>
-        <div className="relative relative aspect-square w-1/2 shrink-0 overflow-hidden bg-secondary">
+        <div className="relative relative aspect-square w-1/2 shrink-0 overflow-hidden">
           <div className="absolute inset-0 z-10 bg-linear-to-t from-background to-transparent" />
           {src !== null && (
             <Image
