@@ -97,12 +97,6 @@ export function Profile({
         </p>
       ) : (
         <div className="pt-10">
-          {profile.isOwner && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {copy.profile.ownerNote}
-            </p>
-          )}
-
           <div className="mt-8 flex items-center justify-between gap-3">
             <h2 className="text-sm font-medium text-muted-foreground">
               {copy.profile.focusPerDay}
