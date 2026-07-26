@@ -41,9 +41,7 @@ export function NavBar() {
               className="font-mono tabular-nums hover:text-foreground"
               dir="ltr"
             >
-              <div className="w-12 flex justify-end">
-                {faClock(remainingMs)}
-              </div>
+              <div className="w-5 flex justify-end">{faClock(remainingMs)}</div>
               <Scan size={15} className="text-rose-500 animate-pulse" />
             </Link>
           </Button>
