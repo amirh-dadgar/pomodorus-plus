@@ -22,12 +22,12 @@ function ChartAreaSkeleton() {
   return (
     <div>
       <Skeleton className="mt-4 h-44 w-full" />
-      <div className="mt-6 border-t pt-4">
+      <div className="mt-10">
         <div className="flex items-stretch gap-4">
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
             <Skeleton className="h-3 w-32" />
             <Skeleton className="h-12 w-28" />
-            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-6 w-32" />
           </div>
           <Skeleton className="aspect-square w-1/2 shrink-0" />
         </div>
@@ -157,12 +157,9 @@ export function Profile({
                 {selected && (
                   <motion.div
                     key={selected.dayKey}
-                    // A day rises in from just below and sinks back down on the
-                    // way out, so a change reads as one card giving way to the
-                    // next rather than as a blink.
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     // `wait` means a scrub pays this twice per day crossed.
                     transition={{ duration: 0.3, ease: "easeOut" }}
                   >

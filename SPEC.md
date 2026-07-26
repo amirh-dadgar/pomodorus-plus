@@ -13,6 +13,7 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 ## Look & language
 
 - Single hard-coded theme: pitch black `#000000` background, white text, monochrome. No theme toggle.
+- Flat: no corner radius (`--radius: 0rem`), no shadows, and no dividing rules between sections — spacing does the separating.
 - Entire UI in Persian, RTL, local Peyda (FaNum) font.
 - Copy voice: extremely casual Gen-Z Persian (colloquial spelling, loanwords like فوکوس/چیل). Applies to all user-facing text including server error messages. All copy is centralized in `lib/copy.json`.
 - Persian digits everywhere (e.g. ۲۵:۰۰) and Jalali (Shamsi) dates, via `Intl` with `fa-IR-u-ca-persian`.
@@ -48,7 +49,7 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 - Pointing at the chart (hover or touch drag) selects a day; a docked **day detail** panel below the chart (never a floating tooltip) shows that day's per-category rows sorted largest first, each with a progress bar sized as its share of the day's total. Defaults to the most recent day with data.
 - The day detail opens with a two-column header: the day's total set as a large `h:mm` clock beside a square image drawn from `public/banners`. The clock is captioned — Jalali date above it as a small muted label, «ساعت کار متمرکز» below set like the clock itself — so the bare number is never left to stand for itself. The image is picked at random the first time a day is shown and kept for the rest of the visit, so pointing along the chart never reshuffles the art; consecutive draws avoid each other. All images preload, and swaps are instant — no fade.
 - The chart is zero-filled, so a day with no focus time can still be pointed at. It has no day detail: the panel is not rendered at all rather than showing a zero.
-- Every change of day is animated (`motion`), as is the panel appearing and disappearing — each day's panel is its own arrival and departure. A panel fades in rising from slightly below, and fades out sinking back down. The outgoing panel finishes leaving before the incoming one arrives, since the two differ in height with the category list.
+- Every change of day fades (`motion`), as does the panel appearing and disappearing — each day's panel is its own arrival and departure. The outgoing panel finishes leaving before the incoming one arrives, since the two differ in height with the category list.
 - **Parked, currently commented out in `components/profile.tsx`:** a button below the day detail that downloads it as a PNG for sharing. The image is a capture of the panel as rendered — same layout, font, and art — padded and filled black to match the page, at 3× density. It contains the panel and nothing else: no username, no app name. The button sits outside the captured node so it never appears in its own screenshot. `components/screenshot-button.tsx` and `lib/card-png.ts` still build.
 - Day-detail privacy: visitors see public category names; all private categories collapse into one masked «تسک خصوصی» row. The owner sees real names everywhere plus a disclaimer that private tasks are hidden from others. Deleted categories keep their preserved name; sessions without a category (and empty-name tombstones) form one unmasked "no task" row.
 - There is no separate private history page; a user's own profile serves that purpose.

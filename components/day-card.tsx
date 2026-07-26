@@ -82,8 +82,9 @@ export function DayCard({
   usePreloadedBanners(banners);
   const src = useDayBanner(banners, `${username}:${day.dayKey}`);
 
+  // No rule above the card: the gap alone separates it from the chart.
   return (
-    <section ref={ref} className="mt-6 border-t pt-4">
+    <section ref={ref} className="mt-10">
       {/* A plain row already puts the first child on the right under dir=rtl,
           which is where the total belongs; the image trails on the left. */}
       <div className="flex items-stretch gap-4">
@@ -97,7 +98,7 @@ export function DayCard({
           </p>
           {/* Set like the clock, not like a caption: the two read as one
               phrase, so the unit should not look like a footnote to it. */}
-          <p className="mt-1.5 text-base font-bold">{copy.profile.focusedHours}</p>
+          <p className="mt-1.5 text-lg font-bold">{copy.profile.focusedHours}</p>
         </div>
         <div className="relative aspect-square w-1/2 shrink-0 overflow-hidden bg-secondary">
           {src !== null && (
