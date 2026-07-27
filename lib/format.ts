@@ -42,10 +42,12 @@ const jalali = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
   year: "numeric",
 });
 
-/** Jalali date for a "YYYY-MM-DD" Tehran day key, e.g. «۲ مرداد ۱۴۰۵». */
+/** Jalali date for a "YYYY-MM-DD" Tehran day key, e.g. «۲ مرداد ۱۴۰۵» (day-month-year). */
 export function faDate(dayKey: string): string {
   // Noon UTC is unambiguously inside the Tehran day.
-  return jalali.format(new Date(`${dayKey}T12:00:00Z`));
+  const parts = jalali.formatToParts(new Date(`${dayKey}T12:00:00Z`));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("day")} ${get("month")} ${get("year")}`;
 }
 
 const jalaliShort = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
