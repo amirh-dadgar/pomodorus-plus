@@ -40,10 +40,9 @@ const jalali = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
   day: "numeric",
   month: "long",
   year: "numeric",
-  weekday: "long",
 });
 
-/** Jalali date for a "YYYY-MM-DD" Tehran day key, e.g. «پنجشنبه ۲ مرداد ۱۴۰۵». */
+/** Jalali date for a "YYYY-MM-DD" Tehran day key, e.g. «۲ مرداد ۱۴۰۵». */
 export function faDate(dayKey: string): string {
   // Noon UTC is unambiguously inside the Tehran day.
   return jalali.format(new Date(`${dayKey}T12:00:00Z`));
