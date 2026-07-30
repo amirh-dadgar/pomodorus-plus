@@ -4,7 +4,6 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import copy from "../lib/copy.json";
 import { WORK_MINUTES } from "./sessions";
-import { tehranDayKey } from "./days";
 
 const MINUTE_MS = 60_000;
 const CLOCK_SKEW_MS = 5 * MINUTE_MS;
@@ -43,9 +42,9 @@ function validName(name: string | undefined): string | null {
  * The whole sync protocol in one idempotent mutation
  * (docs/adr/0001-local-first-timer.md): a device uploads everything it has
  * done since it was last online. Category ops apply last-write-wins with
- * delete beating rename; completed work sessions append to the log and the
- * dailyStats aggregates, deduped by clientId so retries are safe. Invalid
- * items are dropped, never failed — the client clears its queue on success.
+ * delete beating rename; completed work sessions append to the log, deduped by
+ * clientId so retries are safe. Invalid items are dropped, never failed — the
+ * client clears its queue on success.
  */
 export const push = mutation({
   args: {
@@ -142,25 +141,6 @@ export const push = mutation({
         clientId: s.clientId,
         ...(s.devFast ? { devFast: true } : {}),
       });
-
-      const dayKey = tehranDayKey(s.endedAt);
-      const day = await ctx.db
-        .query("dailyStats")
-        .withIndex("by_user_day", (q) => q.eq("userId", userId).eq("dayKey", dayKey))
-        .unique();
-      if (day) {
-        await ctx.db.patch(day._id, {
-          totalMs: day.totalMs + s.durationMs,
-          sessionCount: day.sessionCount + 1,
-        });
-      } else {
-        await ctx.db.insert("dailyStats", {
-          userId,
-          dayKey,
-          totalMs: s.durationMs,
-          sessionCount: 1,
-        });
-      }
     }
   },
 });

@@ -6,8 +6,8 @@ import { buildChartDays } from "./chartData";
 
 /**
  * The public profile's focus chart: per-day totals plus per-category slices
- * over the last `days` Tehran days, computed from the sessions log so the
- * day detail always sums to the line (dailyStats stays write-only here).
+ * over the last `days` Tehran days, computed from the sessions log — the one
+ * source of daily totals, so the day detail always sums to the line.
  * Masking happens server-side: a visitor never receives private category
  * names — they arrive pre-collapsed into a single "private" bucket. The
  * owner gets real names everywhere. Null when no such user.

@@ -31,7 +31,8 @@ export default defineSchema({
     // Client timestamp of the last accepted edit — last-write-wins on sync.
     updatedAt: v.optional(v.number()),
     // Tombstone instead of a hard delete so a delete on one device beats a
-    // rename queued on another. Past focus time lives in dailyStats anyway.
+    // rename queued on another. The tombstone keeps its name and session rows
+    // keep pointing at it, so deleting a category never erases past focus time.
     deleted: v.optional(v.boolean()),
   })
     .index("by_user", ["userId"])
@@ -82,13 +83,4 @@ export default defineSchema({
     cycleCount: v.number(),
     lastActivityAt: v.number(),
   }).index("by_user", ["userId"]),
-
-  // Daily aggregates (Tehran-local day), independent of categories so
-  // deleting a category never erases history.
-  dailyStats: defineTable({
-    userId: v.id("users"),
-    dayKey: v.string(), // "YYYY-MM-DD" in Asia/Tehran (UTC+3:30)
-    totalMs: v.number(),
-    sessionCount: v.number(),
-  }).index("by_user_day", ["userId", "dayKey"]),
 });

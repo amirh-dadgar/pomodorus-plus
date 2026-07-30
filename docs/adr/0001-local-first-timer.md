@@ -9,9 +9,13 @@ Pomodorus must be fully functional offline as an installable PWA. A server-autho
 - "A session completes even with no tab open" now means it is finalized retroactively on next launch, not at the moment the end time passes.
 - Notifications fire from local completion, so they work offline.
 - Offline use requires having signed in once on the device; an expired auth token never blocks the timer — unsynced data is held and syncs after re-login.
-- Category edits sync last-write-wins (delete beats rename, duplicate names tolerated). History is daily aggregates independent of category, so conflicts cannot lose focus time.
+- Category edits sync last-write-wins (delete beats rename, duplicate names tolerated). Conflicts cannot lose focus time: a delete tombstones the category rather than removing it, keeping its name, and session rows keep pointing at it.
 
 ## Considered options
 
 - **Keep server-authoritative, offline as a fallback mode** — rejected: two timer state machines and a hairy handoff on every network transition.
 - **Offline as read-only cache** — rejected: fails the requirement outright.
+
+## Amendment, 2026-07-30
+
+The consequence above originally read "history is daily aggregates independent of category", and this decision kept a `dailyStats` table of per-day totals alongside the sessions log to deliver that. Two things made it dead weight: the category tombstone already gives the property, and `profiles.chart` derives every total from the sessions log directly so that a day detail always sums to the chart line. Nothing ever read the aggregates. The table, its `by_user_day` index and the maintenance in `sync.push` are gone — the sessions log is the single source of daily totals. Pre-existing rows are simply left unread.

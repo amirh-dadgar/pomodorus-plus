@@ -1,4 +1,4 @@
-// Tehran-local day bucketing, shared by sync (writes) and profiles (reads).
+// Tehran-local day bucketing, used wherever the sessions log is read per day.
 // Fixed UTC+3:30: Iran abolished DST in 2022, so no tz database is needed.
 
 const MINUTE_MS = 60_000;

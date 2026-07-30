@@ -38,7 +38,7 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 
 - The category **is** the task label. Fields: name, public/private flag.
 - Created inline in the start-screen picker; rename, visibility toggle, and delete supported — all fully offline.
-- Cannot delete/edit a category while a session is running on it (checked locally). Deleting keeps past focus time (history stores daily aggregates independent of category).
+- Cannot delete/edit a category while a session is running on it (checked locally). Deleting keeps past focus time: it tombstones the category, keeping its name, and past sessions keep pointing at it.
 - Sync conflicts resolve last-write-wins: latest timestamped change per category wins, delete beats rename, duplicate names are tolerated.
 
 ## Pages & routing
