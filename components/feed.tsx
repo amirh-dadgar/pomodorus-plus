@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { copy } from "@/lib/copy";
 import { faClock } from "@/lib/format";
 import { useOnline } from "@/lib/local/hooks";
+import { isLive } from "@/lib/presence";
 
 export function Feed() {
   const feed = useQuery(api.sessions.activeFeed);
@@ -34,7 +35,7 @@ export function Feed() {
 
   // Presence rows self-expire at their end time; drop the ones the server
   // hasn't re-evaluated yet.
-  const active = (feed ?? []).filter((e) => e.startedAt + e.durationMs > now);
+  const active = (feed ?? []).filter((e) => isLive(e, now));
   if (active.length === 0) return null;
 
   return (

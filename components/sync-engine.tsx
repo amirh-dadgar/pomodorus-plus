@@ -4,6 +4,7 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { useLocalState } from "@/lib/local/hooks";
+import { advertisement } from "@/lib/presence";
 import {
   effectiveCategories,
   markSynced,
@@ -63,6 +64,8 @@ export function SyncEngine() {
   useEffect(() => {
     if (!isAuthenticated) return;
     if (running) {
+      // The guard, not the dependency list, is what keeps one session from
+      // being advertised twice — so `state` can be listed honestly.
       if (running.id === prevRunningId.current) return;
       prevRunningId.current = running.id;
       const category =
@@ -70,18 +73,12 @@ export function SyncEngine() {
           ? (effectiveCategories(state).find((c) => c.clientId === running.categoryClientId) ??
             null)
           : null;
-      setPresence({
-        kind: running.kind,
-        label: category?.isPublic ? category.name : null,
-        startedAt: running.startedAt,
-        durationMs: running.durationMs,
-      }).catch(() => {});
+      setPresence(advertisement(running, category)).catch(() => {});
     } else if (prevRunningId.current !== null) {
       prevRunningId.current = null;
       clearPresence().catch(() => {});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- category lookup is incidental
-  }, [isAuthenticated, running, setPresence, clearPresence]);
+  }, [isAuthenticated, running, state, setPresence, clearPresence]);
 
   return null;
 }

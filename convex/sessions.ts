@@ -2,11 +2,9 @@ import { v, ConvexError } from "convex/values";
 import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import copy from "../lib/copy.json";
+import { SWEEP_GRACE_MS, accept, isLive, visibleLabel } from "../lib/presence";
 
-const MINUTE_MS = 60_000;
 export const WORK_MINUTES = [25, 55] as const;
-const MAX_PRESENCE_MS = 60 * MINUTE_MS;
-const CLOCK_SKEW_MS = 5 * MINUTE_MS;
 
 async function requireUserId(ctx: MutationCtx) {
   const userId = await getAuthUserId(ctx);
@@ -29,34 +27,26 @@ export const setPresence = mutation({
     startedAt: v.number(),
     durationMs: v.number(),
   },
-  handler: async (ctx, { kind, label, startedAt, durationMs }) => {
+  handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
     const now = Date.now();
-    if (
-      !Number.isFinite(startedAt) ||
-      !Number.isFinite(durationMs) ||
-      durationMs <= 0 ||
-      durationMs > MAX_PRESENCE_MS ||
-      startedAt > now + CLOCK_SKEW_MS
-    ) {
-      return;
-    }
-    const trimmed = label === null ? null : label.trim().slice(0, 40) || null;
+    const vetted = accept(args, now);
+    if (vetted === null) return;
+
     const existing = await ctx.db
       .query("presence")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
-    const row = { userId, kind, label: trimmed, startedAt, durationMs };
     if (existing) {
-      await ctx.db.replace(existing._id, row);
+      await ctx.db.replace(existing._id, { userId, ...vetted });
     } else {
-      await ctx.db.insert("presence", row);
+      await ctx.db.insert("presence", { userId, ...vetted });
     }
     // Opportunistic cleanup: long-expired rows from clients that never came
     // back to clear them. The table holds at most one row per active user.
     const all = await ctx.db.query("presence").collect();
     for (const p of all) {
-      if (p.startedAt + p.durationMs < now - MINUTE_MS) await ctx.db.delete(p._id);
+      if (!isLive(p, now - SWEEP_GRACE_MS)) await ctx.db.delete(p._id);
     }
   },
 });
@@ -83,7 +73,7 @@ export const activeFeed = query({
     const rows = await ctx.db.query("presence").take(200);
     const feed = [];
     for (const p of rows) {
-      if (p.startedAt + p.durationMs <= now) continue;
+      if (!isLive(p, now)) continue;
       const user = await ctx.db.get(p.userId);
       if (!user?.username) continue;
       feed.push({
@@ -91,7 +81,7 @@ export const activeFeed = query({
         username: user.username,
         isMe: p.userId === userId,
         kind: p.kind,
-        label: p.kind === "work" ? p.label : null, // null on work = private task
+        label: visibleLabel(p), // null on work = private task
         startedAt: p.startedAt,
         durationMs: p.durationMs,
       });
