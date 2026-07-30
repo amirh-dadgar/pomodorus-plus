@@ -19,24 +19,33 @@ export function Feed() {
     return () => clearInterval(timer);
   }, []);
 
-  // The feed is live-only; offline it degrades to an honest little notice.
-  if (!online) {
+  // Presence rows self-expire at their end time; drop the ones the server
+  // hasn't re-evaluated yet.
+  const active = (feed ?? []).filter((e) => isLive(e, now));
+
+  // The heading always renders, and the body keeps one row's worth of height
+  // whatever it is saying: the feed closes the landing page, and a section
+  // that vanishes when nobody is working leaves the page ending mid-air.
+  // The feed is live-only, so offline it degrades to an honest little notice.
+  if (!online || active.length === 0) {
     return (
-      <section className="w-full space-y-3 border-t pt-6">
+      <section className="w-full space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground">
           {copy.feed.title}
         </h2>
-        <p className="text-sm text-muted-foreground">
-          {copy.offline.feedOffline}
+        {/* Blank, not «nobody's online», while the query is still in flight:
+            the row holds its height either way, so there is nothing to gain
+            from asserting an emptiness we haven't heard back about yet. */}
+        <p className="min-h-6 text-sm text-muted-foreground">
+          {!online
+            ? copy.offline.feedOffline
+            : feed === undefined
+              ? ""
+              : copy.feed.empty}
         </p>
       </section>
     );
   }
-
-  // Presence rows self-expire at their end time; drop the ones the server
-  // hasn't re-evaluated yet.
-  const active = (feed ?? []).filter((e) => isLive(e, now));
-  if (active.length === 0) return null;
 
   return (
     <section className="w-full space-y-3">
