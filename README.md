@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pomodorus
 
-## Getting Started
+A very minimal Persian-language pomodoro app: a local-first timer, public profiles with a focus chart, and a realtime global activity feed. Installable as a PWA and fully usable offline.
 
-First, run the development server:
+Next.js (App Router) + Convex, TypeScript, Tailwind, shadcn/ui.
+
+- `SPEC.md` — what the app does, feature by feature.
+- `CONTEXT.md` — the domain language. Read this before naming anything.
+- `docs/adr/` — decisions and why they were made. `0001` explains the local-first timer.
+- `DEPLOY.md` — production (Vercel + Convex).
+
+## Requirements
+
+- **Node 20 or newer** (developed on 24).
+- A **Convex account** — free tier is plenty. The backend is Convex; there is no separate database to install.
+
+## Setup
+
+```bash
+git clone https://github.com/yazdanctx/pomodorus.git
+cd pomodorus
+npm install
+```
+
+### Point it at a Convex deployment
+
+`npx convex dev` creates a deployment, writes `.env.local` for you, and then keeps running to sync `convex/` on every save:
+
+```bash
+npx convex login   # first time only
+npx convex dev
+```
+
+Leave it running. It writes three variables to `.env.local` (gitignored):
+
+| Variable | What it is |
+| --- | --- |
+| `CONVEX_DEPLOYMENT` | The deployment `npx convex dev` syncs to |
+| `NEXT_PUBLIC_CONVEX_URL` | The deployment's client API URL |
+| `NEXT_PUBLIC_CONVEX_SITE_URL` | The deployment's HTTP-actions URL, used by auth |
+
+`.env.production` is committed and pins `NEXT_PUBLIC_CONVEX_URL` to the production deployment. `.env.local` overrides it, so local work never touches production.
+
+### Generate auth keys
+
+Signup and login need a keypair on the Convex deployment. Once per deployment:
+
+```bash
+npx @convex-dev/auth
+```
+
+This sets `JWT_PRIVATE_KEY` and `JWKS` on it. Without them, login fails while the rest of the app still loads.
+
+### Run it
+
+In a second terminal, with `npx convex dev` still going:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open **https://localhost:3000** — note the **https**. The dev server runs TLS via `next dev --experimental-https`, because notifications and service workers need a secure context. Next generates a self-signed certificate into `certificates/` on first run; your browser will warn about it once, and you accept it.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sign up with any email and password — there are no format rules and no email verification, so `test` / `test` works. The username (`[a-z0-9_]{3,20}`) is your only public identity and cannot be changed later.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Everyday commands
 
-## Learn More
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Dev server, HTTPS on `localhost:3000` |
+| `npx convex dev` | Syncs `convex/` to your dev deployment; keep it running alongside |
+| `npm test` | Unit tests (`node:test` via `tsx`) |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | Typecheck |
+| `npm run build` | Production build |
+| `npm start` | Serve a production build |
 
-To learn more about Next.js, take a look at the following resources:
+There is no test-watch script; `npx tsx --test tests/some.test.ts` runs one file.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Dev fast mode
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+In dev builds every session finishes after **3 seconds** while being recorded at its full nominal duration, so you can exercise a whole 4-session cycle in under a minute. `sync.push` drops these unless `DEV_FAST_POMODORO` is set on the deployment:
 
-## Deploy on Vercel
+```bash
+npx convex env set DEV_FAST_POMODORO 1
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Leave it unset on production, or fake sessions would be credited there.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Testing offline and the PWA
+
+The service worker registers in **production builds only** — `next dev` never caches. To exercise offline behaviour:
+
+```bash
+npm run build && npm start
+```
+
+Visit once while signed in, then go offline. `/app` stays fully functional (timer, categories, your own history from local data); `/` loads from cache with the feed replaced by a notice; `/u/[username]` is online-only. After changing cached assets, bump `VERSION` in `public/sw.js` so installed clients refresh.
+
+Offline use requires having signed in at least once on that device.
+
+## How the code is laid out
+
+```
+app/            routes: / (landing), /app (timer), /u/[username] (profile), /login
+components/     UI. sync-engine.tsx is headless glue, mounted once in the layout
+convex/         schema, queries, mutations. sync.ts is the whole sync protocol
+lib/local/      the local-first timer: device.ts holds the rules, store.ts the adapter
+lib/            focus-history.ts, presence.ts, banners.ts, format.ts, copy.ts
+tests/          unit tests for the pure modules
+public/banners/ day-card art — drop in an image and it is picked up automatically
+```
+
+Two things worth knowing before editing:
+
+- **The timer is local-first.** The device that runs a session owns it; Convex is an append-only log, not the source of truth. Every rule lives in `lib/local/device.ts` as one `apply(state, command, env)` — pure, with the clock handed in. `lib/local/store.ts` is the only thing that touches `localStorage`, `Date.now` or `crypto.randomUUID`. Add rules to `device.ts`, not to components.
+- **All user-facing text is in `lib/copy.json`**, in deliberately casual Persian, including server error messages. Never hardcode a string in a component. Repo docs like this one are not copy and stay formal.
+
+Persian digits and Jalali dates go through `lib/format.ts`. The UI is RTL with a single hard-coded black theme and no corner radius — there is no theme toggle to add.
+
+## Regenerating icons
+
+Every icon comes from `scripts/icon*.svg`. After editing those:
+
+```bash
+npm install --no-save sharp
+node scripts/gen-icons.mjs
+```
