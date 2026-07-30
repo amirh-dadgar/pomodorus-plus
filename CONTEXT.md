@@ -97,7 +97,7 @@ _Avoid_: pending, dirty, offline data
 ### Navigation
 
 **NavBar**:
-The single shared navigation bar rendered on all authenticated public pages (Landing, Timer app, Profile). Always shows the app logo (icon only, no text). Conditionally shows a CTA (login/timer link), a profile link, or a timer badge. Auth-dependent buttons never guess — but they now **reserve their box** rather than rendering nothing, so the bar keeps its height and the CTA its width while the auth state resolves. Being signed in without a cached username still counts as unresolved, up to a grace period, after which the CTA settles on the timer link so an unreachable `profiles.me` leaves a working link rather than a permanent placeholder.
+The single shared navigation bar rendered on all authenticated public pages (Landing, Timer app, Profile). Always shows the app logo (icon only, no text) — the mark itself, served from the same `/icon.svg` as the favicon and the PWA icons rather than a stand-in glyph. Conditionally shows a CTA (login/timer link), a profile link, or a timer badge. Auth-dependent buttons never guess — but they now **reserve their box** rather than rendering nothing, so the bar keeps its height and the CTA its width while the auth state resolves. Being signed in without a cached username still counts as unresolved, up to a grace period, after which the CTA settles on the timer link so an unreachable `profiles.me` leaves a working link rather than a permanent placeholder.
 _Avoid_: header, app header, nav bar (two words)
 
 **Placeholder**:

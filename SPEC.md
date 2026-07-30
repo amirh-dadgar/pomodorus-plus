@@ -78,7 +78,7 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 ## Offline & PWA
 
 - Installable PWA (`app/manifest.ts`, `display: standalone`, black theme/background). Manifest `name`/`short_name`: **Pomodorus** (Latin). Installed app's `start_url` is `/app`.
-- Icons: one mark everywhere — a macOS-style rounded squircle, bold white line-art tomato on black, monochrome. Provided as favicon, PWA icons (192/512 + maskable with safe-zone padding), and apple-touch-icon.
+- Icons: one mark everywhere — a macOS-style rounded squircle, bold white line-art tomato on black, monochrome. Provided as favicon, PWA icons (192/512 + maskable with safe-zone padding), apple-touch-icon, and the NavBar logo, which loads the same `/icon.svg` so the bar can never drift from the installed app.
 - Offline scope: `/app` is fully functional (timer, categories, own history from local data). `/` loads from cache with the feed replaced by an offline notice. `/u/[username]` is online-only; offline it shows a friendly offline page.
 - Offline requires having signed in at least once on the device; first-ever visit offline shows a "need internet to sign in" screen. An expired auth token never blocks the timer — unsynced data is held and syncs right after re-login.
 - Sync is fully automatic on reconnect: completed sessions append to history, category changes apply last-write-wins. No sync buttons or dialogs; the only UI is a subtle indicator (casual Persian copy) when offline or holding unsynced data.

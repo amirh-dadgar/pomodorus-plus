@@ -4,7 +4,8 @@ import { useConvexAuth } from "convex/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Scan, Timer } from "lucide-react";
+import Image from "next/image";
+import { Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/lib/copy";
@@ -47,8 +48,21 @@ export function NavBar() {
     // h-14 rather than padding alone: the bar keeps its height even in the
     // beat before the auth state resolves, so nothing below it ever moves.
     <header className="flex h-14 w-full shrink-0 items-center justify-between px-6">
+      {/* The real mark, not a stand-in glyph: /icon.svg is the same file Next
+          serves as the favicon and that scripts/gen-icons.mjs renders the PWA
+          icons from, so the bar cannot drift from the installed app. Empty alt
+          because the link already carries the name. Unoptimized since the
+          optimizer refuses SVG without dangerouslyAllowSVG, and a 1KB vector
+          has nothing to gain from it anyway. */}
       <Link href="/" aria-label={copy.app.name}>
-        <Timer className="size-6" aria-hidden />
+        <Image
+          src="/icon.svg"
+          alt=""
+          width={26}
+          height={26}
+          unoptimized
+          priority
+        />
       </Link>
       {/* The badge sits inline-start of the CTA, so it materialises into empty
           space rather than pushing the CTA off the frame edge. */}
