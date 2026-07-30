@@ -3,6 +3,7 @@ import { internalMutation, mutation, query, type MutationCtx } from "./_generate
 import { getAuthUserId } from "@convex-dev/auth/server";
 import copy from "../lib/copy.json";
 import { SWEEP_GRACE_MS, accept, isLive, visibleLabel } from "../lib/presence";
+import { tehranDayKey } from "./days";
 
 export const WORK_MINUTES = [25, 55] as const;
 
@@ -88,6 +89,46 @@ export const activeFeed = query({
     }
     feed.sort((a, b) => a.startedAt - b.startedAt);
     return feed;
+  },
+});
+
+/**
+ * The signed-in user's focus so far in the current Tehran day: how many work
+ * sessions completed and their total nominal time.
+ *
+ * Read from the server rather than from local storage even though the timer
+ * is local-first (docs/adr/0002-todays-focus-from-the-server.md): the device
+ * only keeps sessions until they sync, so a local count would drop to zero
+ * the moment sync ran. The cost is that this line has nothing to show while
+ * offline, which the timer screen renders as a held-open blank rather than a
+ * claim that nothing was focused.
+ *
+ * Null when signed out, so the caller can tell "not yours to see" from a
+ * genuine zero.
+ */
+export const todayFocus = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return null;
+
+    const today = tehranDayKey(Date.now());
+    // Same full scan as the profile chart: pre-migration rows may lack
+    // endedAt, and one casual user's session log is tiny.
+    const completed = await ctx.db
+      .query("sessions")
+      .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "completed"))
+      .collect();
+
+    let count = 0;
+    let totalMs = 0;
+    for (const s of completed) {
+      if (s.kind !== "work") continue;
+      if (tehranDayKey(s.endedAt ?? s.startedAt + s.durationMs) !== today) continue;
+      count += 1;
+      totalMs += s.durationMs;
+    }
+    return { count, totalMs };
   },
 });
 

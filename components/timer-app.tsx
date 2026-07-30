@@ -1,22 +1,25 @@
 "use client";
 
-import { useConvexAuth } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/convex/_generated/api";
 import { copy, t } from "@/lib/copy";
-import { faClock, faDigits } from "@/lib/format";
+import { faClock, faDigits, faDuration } from "@/lib/format";
 import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
 import { OfflineIndicator } from "@/components/offline-indicator";
-import { Minus, Play, Plus, SkipForward, X } from "lucide-react";
+import { Play, SkipForward, X } from "lucide-react";
 import {
   useLocalIdentity,
   useLocalState,
+  useOnline,
   useTimerNow,
 } from "@/lib/local/hooks";
 import { effectiveCategories } from "@/lib/local/device";
 import { cancelWork, skipBreak, startWork } from "@/lib/local/store";
-import { endAt, type SessionKind } from "@/lib/local/types";
+import { WORK_MINUTES, endAt, type SessionKind } from "@/lib/local/types";
 
 const KIND_LABEL: Record<SessionKind, string> = {
   work: copy.timer.kindWork,
@@ -24,7 +27,39 @@ const KIND_LABEL: Record<SessionKind, string> = {
   longBreak: copy.timer.kindLongBreak,
 };
 
-type DurationChoice = 25 | 55;
+type DurationChoice = (typeof WORK_MINUTES)[number];
+
+/**
+ * How much focus the server has recorded for this Tehran day.
+ *
+ * The one part of the timer screen that isn't local-first
+ * (docs/adr/0002-todays-focus-from-the-server.md), so it has three ways of
+ * having no number: signed out, still loading, and offline. All three render
+ * as an empty row of the same height — only a total the server actually
+ * confirmed is allowed to say «امروز تمرکز نکردی کلا».
+ */
+function TodayFocus() {
+  const { isAuthenticated } = useConvexAuth();
+  const online = useOnline();
+  const today = useQuery(api.sessions.todayFocus, isAuthenticated ? {} : "skip");
+
+  return (
+    <div className="flex h-5 items-center justify-center">
+      {today === undefined && isAuthenticated && online ? (
+        <Skeleton className="h-3.5 w-40 rounded-none" />
+      ) : today ? (
+        <p className="text-sm text-muted-foreground">
+          {today.count === 0
+            ? copy.timer.todayEmpty
+            : t(copy.timer.todaySummary, {
+                count: faDigits(today.count),
+                duration: faDuration(today.totalMs),
+              })}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export function TimerApp() {
   // The timer is local-first: everything below renders from the local
@@ -119,6 +154,18 @@ export function TimerApp() {
           >
             {faClock(remainingMs)}
           </p>
+          {/* Elapsed share of the session. Measured against the real end time,
+              so a dev fast session fills over its three seconds rather than
+              creeping along its nominal 25 minutes. Fills from the right,
+              inheriting the page's RTL direction. */}
+          <div className="h-1 w-full max-w-xs bg-muted" aria-hidden>
+            <div
+              className="h-full bg-foreground transition-[width] duration-500 ease-linear"
+              style={{
+                width: `${(1 - remainingMs / (endAt(running) - running.startedAt)) * 100}%`,
+              }}
+            />
+          </div>
           <div
             className="flex gap-2"
             title={t(copy.timer.cycleTitle, { n: faDigits(state.cycleCount) })}
@@ -155,26 +202,29 @@ export function TimerApp() {
           <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
 
           <section className="flex w-full flex-col border border-t-0 px-10 py-20 items-center gap-6">
-            <div className="flex items-center gap-4" dir="ltr">
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={choice === 25}
-                onClick={() => setChoice(25)}
-              >
-                <Minus className="size-4" />
-              </Button>
-              <p className="font-mono text-7xl font-bold tabular-nums tracking-tight">
-                {faClock(choice * 60_000)}
-              </p>
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={choice === 55}
-                onClick={() => setChoice(55)}
-              >
-                <Plus className="size-4" />
-              </Button>
+            <p className="font-mono text-7xl font-bold tabular-nums tracking-tight">
+              {faClock(choice * 60_000)}
+            </p>
+            {/* There are only two durations, so the old ± pair always had one
+                half disabled — a stepper that couldn't step. Both options are
+                spelled out instead, and the chosen one is simply the filled
+                button. */}
+            <div
+              className="flex gap-2"
+              role="radiogroup"
+              aria-label={copy.timer.kindWork}
+            >
+              {WORK_MINUTES.map((minutes) => (
+                <Button
+                  key={minutes}
+                  role="radio"
+                  aria-checked={choice === minutes}
+                  variant={choice === minutes ? "default" : "outline"}
+                  onClick={() => setChoice(minutes)}
+                >
+                  {t(copy.timer.minutes, { m: faDigits(minutes) })}
+                </Button>
+              ))}
             </div>
             <Button
               size="lg"
@@ -202,6 +252,7 @@ export function TimerApp() {
               <Play />
               {copy.timer.start}
             </Button>
+            <TodayFocus />
           </section>
         </div>
       )}
