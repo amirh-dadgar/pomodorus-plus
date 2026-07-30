@@ -5,12 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { useLocalState } from "@/lib/local/hooks";
 import { advertisement } from "@/lib/presence";
-import {
-  effectiveCategories,
-  markSynced,
-  setIdentity,
-  setServerCategories,
-} from "@/lib/local/store";
+import { effectiveCategories } from "@/lib/local/device";
+import { markSynced, setIdentity, setServerCategories } from "@/lib/local/store";
 
 const RETRY_MS = 15_000;
 

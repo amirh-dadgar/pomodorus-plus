@@ -8,12 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { copy, t } from "@/lib/copy";
 import { useLocalState } from "@/lib/local/hooks";
-import {
-  createCategory,
-  deleteCategory,
-  effectiveCategories,
-  updateCategory,
-} from "@/lib/local/store";
+import { effectiveCategories } from "@/lib/local/device";
+import { createCategory, deleteCategory, updateCategory } from "@/lib/local/store";
 import type { Category } from "@/lib/local/types";
 import {
   Command,
@@ -64,12 +60,10 @@ export function CategoryPicker({
   }
 
   function createFromSearch() {
-    const trimmed = search.trim();
-    if (!trimmed) return;
-    try {
-      onSelect(createCategory(trimmed, true));
-      closeAndReset();
-    } catch {}
+    const clientId = createCategory(search.trim(), true);
+    if (clientId === null) return;
+    onSelect(clientId);
+    closeAndReset();
   }
 
   return (
@@ -251,11 +245,8 @@ function CreateView({
   const [isPublic, setIsPublic] = useState(true);
 
   function handleCreate() {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    try {
-      onCreated(createCategory(trimmed, isPublic));
-    } catch {}
+    const clientId = createCategory(name, isPublic);
+    if (clientId !== null) onCreated(clientId);
   }
 
   return (
@@ -335,9 +326,7 @@ function EditView({
             size="sm"
             disabled={!name.trim()}
             onClick={() => {
-              try {
-                updateCategory(category.clientId, name.trim(), isPublic);
-              } catch {}
+              updateCategory(category.clientId, name, isPublic);
               onBack();
             }}
           >
@@ -348,10 +337,8 @@ function EditView({
             variant="outline"
             className="text-muted-foreground"
             onClick={() => {
-              try {
-                deleteCategory(category.clientId);
-                onDeleted();
-              } catch {}
+              deleteCategory(category.clientId);
+              onDeleted();
               onBack();
             }}
           >

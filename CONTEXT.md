@@ -49,6 +49,10 @@ _Avoid_: task, tag, project (in code and docs)
 One timed run — work or break — with a nominal duration. Owned by the device that runs it (local-first): it starts, completes, and is credited locally, then is reported to the server. Completed work sessions from every device all count; there is no one-running-session-per-user rule.
 _Avoid_: server-authoritative session (the old model)
 
+**Device**:
+One browser's own copy of the timer: the running session, the cycle counter, the cached category mirror, and the unsynced queues, held in local storage under one username. It owns whatever it runs. Every rule for changing it is one `apply(state, command, env)` in `lib/local/device.ts`, pure and with the clock handed in; `lib/local/store.ts` is the one adapter that binds it to local storage, `Date.now` and `crypto.randomUUID`.
+_Avoid_: client state, local store (that is the adapter, not the rules), reducer
+
 **Fast session**:
 A dev-only session that completes after seconds of real time but is recorded and credited at its full nominal duration.
 _Avoid_: test session, mock session

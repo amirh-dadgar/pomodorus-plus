@@ -14,12 +14,8 @@ import {
   useLocalState,
   useTimerNow,
 } from "@/lib/local/hooks";
-import {
-  cancelWork,
-  effectiveCategories,
-  skipBreak,
-  startWork,
-} from "@/lib/local/store";
+import { effectiveCategories } from "@/lib/local/device";
+import { cancelWork, skipBreak, startWork } from "@/lib/local/store";
 import { endAt, type SessionKind } from "@/lib/local/types";
 
 const KIND_LABEL: Record<SessionKind, string> = {
@@ -137,11 +133,7 @@ export function TimerApp() {
           {running.kind === "work" ? (
             <Button
               variant="ghost"
-              onClick={() => {
-                try {
-                  cancelWork();
-                } catch {}
-              }}
+              onClick={cancelWork}
             >
               <div className="flex items-center gap-1">
                 <X size={10} />
@@ -151,11 +143,7 @@ export function TimerApp() {
           ) : (
             <Button
               variant="outline"
-              onClick={() => {
-                try {
-                  skipBreak();
-                } catch {}
-              }}
+              onClick={skipBreak}
             >
               <SkipForward />
               {copy.timer.skipBreak}
@@ -203,13 +191,11 @@ export function TimerApp() {
                   Notification.requestPermission();
                 }
                 if (categoryId !== null) {
-                  try {
-                    startWork(
-                      categoryId,
-                      choice,
-                      process.env.NODE_ENV === "development",
-                    );
-                  } catch {}
+                  startWork(
+                    categoryId,
+                    choice,
+                    process.env.NODE_ENV === "development",
+                  );
                 }
               }}
             >
