@@ -4,8 +4,9 @@ The Convex production side is **already deployed and configured**, so the first 
 
 ## Current production state
 
-- Convex production deployment: `tacit-clam-994` (`https://tacit-clam-994.convex.cloud`), running the local-first sync functions (deployed 2026-07-25). A version-skew incident from deploying the Vercel app before the Convex functions is what motivated the CI setup below — prefer it.
-- Auth (`JWT_PRIVATE_KEY`, `JWKS`) is configured on it, and `SITE_URL` is set to `https://pomodorus.vercel.app` (adjust below if your URL differs).
+- Live site: **`https://pomodorus.yazdan.me`**. The `pomodorus.vercel.app` host is stale — it 404s on `/login` — so use the custom domain for anything you are checking by hand.
+- Convex production deployment: `tacit-clam-994` (`https://tacit-clam-994.convex.cloud`), running the local-first sync functions. A version-skew incident from deploying the Vercel app before the Convex functions is what motivated the CI setup below — **it has now happened twice**, so set the CI up rather than relying on remembering.
+- Auth (`JWT_PRIVATE_KEY`, `JWKS`) is configured on it, and `SITE_URL` is set to `https://pomodorus.yazdan.me` (adjust below if your URL changes).
 - `.env.production` (committed) pins `NEXT_PUBLIC_CONVEX_URL` to the production deployment, so a plain `npm run build` on Vercel connects to production Convex with no dashboard env vars.
 - `DEV_FAST_POMODORO` is **not** set on production — the 3-second test sessions are rejected there. Keep it that way.
 
@@ -13,10 +14,10 @@ The Convex production side is **already deployed and configured**, so the first 
 
 1. In Vercel: **Add New → Project** → import `yazdanctx/pomodorus`. Framework preset: **Next.js** (auto-detected). Change nothing else.
 2. Click **Deploy**.
-3. If Vercel assigned a URL other than `https://pomodorus.vercel.app`, point auth at the real one (from a clone of this repo, after `npx convex login`):
+3. If Vercel assigned a URL other than the one above, point auth at the real one (from a clone of this repo, after `npx convex login`):
 
    ```bash
-   npx convex env set SITE_URL https://<your-app>.vercel.app --prod
+   npx convex env set SITE_URL https://<your-app> --prod
    ```
 
    Applies immediately, no redeploy needed.
@@ -43,7 +44,14 @@ Pushing to `main` redeploys **only the Next.js app**. Whenever `convex/` changes
 npx convex deploy
 ```
 
-To automate that instead, switch Vercel to the CI setup:
+Forgetting this is not a cosmetic slip: the new client calls functions the old deployment does not have, and the app 500s in production until you notice. To check for the skew at any time, compare the two deployments' function lists — they should be identical:
+
+```bash
+diff <(npx convex function-spec | grep -o '"identifier": "[^"]*"' | sort) \
+     <(npx convex function-spec --prod | grep -o '"identifier": "[^"]*"' | sort)
+```
+
+To automate the deploy instead, switch Vercel to the CI setup:
 
 1. Convex dashboard → project **pomodorus** → **Settings** → **Deploy keys** (Production) → generate a key.
 2. Vercel project → **Settings → Environment Variables**: add `CONVEX_DEPLOY_KEY` (Production scope).
@@ -54,6 +62,8 @@ To automate that instead, switch Vercel to the CI setup:
    ```
 
 With that in place, every push to `main` deploys Convex and the app together (and `NEXT_PUBLIC_CONVEX_URL` is injected by the deploy command, overriding `.env.production`).
+
+Do the steps in that order. The build command fails outright without `CONVEX_DEPLOY_KEY`, so setting it before changing the build command means production is never left unable to build.
 
 ## Local development
 
