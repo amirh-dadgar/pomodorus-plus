@@ -1,34 +1,64 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pickBanner } from "../lib/banners";
+import { createBannerAssignment } from "../lib/banners";
 
 const BANNERS = ["/banners/a.avif", "/banners/b.avif", "/banners/c.avif"];
 
-test("never repeats the previous banner", () => {
-  for (const last of BANNERS) {
-    // Sweep the whole random range: no draw may land back on `last`.
-    for (const r of [0, 0.34, 0.5, 0.67, 0.999]) {
-      assert.notEqual(pickBanner(BANNERS, last, () => r), last);
+/** Draws in a fixed cycle, so each successive pick is predictable. */
+const cycle = (...values: number[]) => {
+  let i = 0;
+  return () => values[i++ % values.length];
+};
+
+test("a day keeps the image it was first given", () => {
+  const assignment = createBannerAssignment(BANNERS, cycle(0, 0.5, 0.999));
+  const first = assignment.for("yazdan:2026-07-27");
+  // Other days draw in between — the point is that coming back is stable.
+  assignment.for("yazdan:2026-07-26");
+  assignment.for("yazdan:2026-07-25");
+  assert.equal(assignment.for("yazdan:2026-07-27"), first);
+});
+
+test("successive draws never repeat the previous image", () => {
+  // Sweep the whole random range: no draw may land on the one before it.
+  for (const r of [0, 0.34, 0.5, 0.67, 0.999]) {
+    const assignment = createBannerAssignment(BANNERS, () => r);
+    const drawn = ["a", "b", "c", "d"].map((k) => assignment.for(k));
+    for (let i = 1; i < drawn.length; i++) {
+      assert.notEqual(drawn[i], drawn[i - 1]);
     }
   }
 });
 
-test("every other banner stays reachable", () => {
-  const seen = new Set(
-    [0, 0.5, 0.999].map((r) => pickBanner(BANNERS, "/banners/a.avif", () => r)),
+test("every image stays reachable", () => {
+  const assignment = createBannerAssignment(BANNERS, cycle(0, 0.999, 0.999));
+  const seen = new Set(["a", "b", "c"].map((k) => assignment.for(k)));
+  assert.equal(seen.size, 3);
+});
+
+test("two users are keyed apart", () => {
+  const assignment = createBannerAssignment(BANNERS, cycle(0, 0.999));
+  assert.notEqual(
+    assignment.for("yazdan:2026-07-27"),
+    assignment.for("someone:2026-07-27"),
   );
-  assert.deepEqual([...seen].sort(), ["/banners/b.avif", "/banners/c.avif"]);
 });
 
-test("an unknown or absent last banner leaves the full list in play", () => {
-  const seen = new Set([0, 0.4, 0.7].map((r) => pickBanner(BANNERS, null, () => r)));
-  assert.deepEqual([...seen].sort(), BANNERS);
+test("a lone image repeats rather than vanishing", () => {
+  const assignment = createBannerAssignment(["/banners/a.avif"]);
+  assert.equal(assignment.for("a"), "/banners/a.avif");
+  assert.equal(assignment.for("b"), "/banners/a.avif");
 });
 
-test("a lone banner repeats rather than vanishing", () => {
-  assert.equal(pickBanner(["/banners/a.avif"], "/banners/a.avif"), "/banners/a.avif");
+test("no images means no image", () => {
+  const assignment = createBannerAssignment([]);
+  assert.equal(assignment.for("a"), null);
 });
 
-test("no banners means no banner", () => {
-  assert.equal(pickBanner([], null), null);
+test("a fresh visit draws its own sequence", () => {
+  // Two assignments over the same list share no memory: this is what makes the
+  // memo per-visit rather than per-process.
+  const a = createBannerAssignment(BANNERS, cycle(0));
+  const b = createBannerAssignment(BANNERS, cycle(0.999));
+  assert.notEqual(a.for("yazdan:2026-07-27"), b.for("yazdan:2026-07-27"));
 });

@@ -2,15 +2,14 @@
 
 import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { DayCard } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
-// Parked, not dropped: the button and lib/card-png.ts still build.
-// import { ScreenshotButton } from "@/components/screenshot-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy, t } from "@/lib/copy";
+import { focusHistory, type ChartPayload } from "@/lib/focus-history";
 import { faDigits } from "@/lib/format";
 
 const RANGES = [7, 30, 90] as const;
@@ -56,33 +55,18 @@ export function Profile({
   const [range, setRange] = useState<Range>(7);
   const [hovered, setHovered] = useState<string | null>(null);
   const live = useQuery(api.profiles.chart, { username, days: range });
-  const cardRef = useRef<HTMLElement>(null);
 
   // Switching ranges resubscribes the query, which momentarily returns
-  // undefined. Keep the last payload so the page shell (username, presets)
-  // stays mounted and only the chart area falls back to a skeleton.
-  const [cached, setCached] = useState<typeof live>(undefined);
+  // undefined. Keeping the last payload is what lets the page shell stay
+  // mounted while only the chart area falls back to a skeleton — the focus
+  // history module decides which of those two is happening.
+  const [cached, setCached] = useState<ChartPayload | undefined>(undefined);
   if (live !== undefined && live !== cached) setCached(live);
-  const profile = live ?? cached;
-  const rangeLoading = live === undefined;
-
-  const days = profile?.days ?? [];
-  const lastWithData = [...days].reverse().find((d) => d.totalMs > 0);
-  // Hover wins while it points inside the range; otherwise the panel rests on
-  // the most recent day that has data.
-  const selectedKey =
-    hovered && days.some((d) => d.dayKey === hovered)
-      ? hovered
-      : lastWithData?.dayKey;
-  // A day with nothing on it has no card: the chart is zero-filled, so pointing
-  // at a flat stretch would otherwise dwell on ۰:۰۰ under an empty bar list.
-  const pointed = days.find((d) => d.dayKey === selectedKey);
-  const selected =
-    pointed !== undefined && pointed.totalMs > 0 ? pointed : undefined;
+  const view = focusHistory({ live, cached, hovered });
 
   return (
     <main className="flex flex-1 flex-col p-6">
-      {profile === undefined ? (
+      {view.state === "loading" ? (
         <div className="pt-10">
           <Skeleton className="h-7 w-36" />
           <div className="mt-8 flex items-center justify-between gap-3">
@@ -91,7 +75,7 @@ export function Profile({
           </div>
           <ChartAreaSkeleton />
         </div>
-      ) : profile === null ? (
+      ) : view.state === "notFound" ? (
         <p className="pt-20 text-center text-sm text-muted-foreground">
           {copy.profile.notFound}
         </p>
@@ -117,9 +101,9 @@ export function Profile({
             </div>
           </div>
 
-          {rangeLoading ? (
+          {view.state === "reloading" ? (
             <ChartAreaSkeleton />
-          ) : lastWithData === undefined ? (
+          ) : view.state === "empty" ? (
             <p className="mt-6 text-sm text-muted-foreground">
               {copy.profile.empty}
             </p>
@@ -127,8 +111,8 @@ export function Profile({
             <>
               <div className="mt-4">
                 <FocusChart
-                  days={days}
-                  selectedKey={selectedKey}
+                  days={view.days}
+                  selectedKey={view.selectedKey}
                   onSelect={setHovered}
                 />
               </div>
@@ -139,9 +123,9 @@ export function Profile({
                   in height with the category list, and running them together
                   would shunt the page around mid-fade. */}
               <AnimatePresence mode="wait">
-                {selected && (
+                {view.selected && (
                   <motion.div
-                    key={selected.dayKey}
+                    key={view.selected.dayKey}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -149,12 +133,10 @@ export function Profile({
                     transition={{ duration: 0.3, ease: "easeOut" }}
                   >
                     <DayCard
-                      ref={cardRef}
-                      day={selected}
-                      username={profile.username}
+                      day={view.selected}
+                      username={view.username}
                       banners={banners}
                     />
-                    {/* <ScreenshotButton target={cardRef} dayKey={selected.dayKey} /> */}
                   </motion.div>
                 )}
               </AnimatePresence>

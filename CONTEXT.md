@@ -39,6 +39,14 @@ _Avoid_: period, filter
 The per-category breakdown of one selected day: each category's focus time as a share of that day's total, largest first. Sessions without a category form their own unmasked bucket; deleted categories keep appearing under their preserved name. Selected by pointing at the chart; defaults to the most recent day with data.
 _Avoid_: tooltip (it is a docked panel, not a floating tooltip), popup
 
+**Focus history**:
+Everything the profile renders below the header, as one value: the focus chart's days for the selected range plus which day detail is showing. It has five states — loading, no such user, reloading (a range switch, where the shell stays and only the chart area falls back to a skeleton), empty (no focus time anywhere in the range), and ready. `lib/focus-history.ts`.
+_Avoid_: view model, chart state, profile data
+
+**Banner**:
+The square image beside a day detail's headline total, drawn at random from `public/banners`. One is assigned per user-and-day the first time that day is shown and kept for the rest of the page visit, so pointing along the chart never reshuffles the art; successive draws avoid each other. `lib/banners.ts`.
+_Avoid_: art, image, thumbnail
+
 ### Timer
 
 **Category**:

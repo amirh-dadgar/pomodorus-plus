@@ -2,52 +2,31 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { pickBanner } from "@/lib/banners";
+import { bannerFor } from "@/lib/banners";
 import { copy } from "@/lib/copy";
+import type { FocusDay, FocusSlice } from "@/lib/focus-history";
 import { faDate, faDuration, faHourClock } from "@/lib/format";
 
-type Slice = { name?: string; bucket?: "private" | "none"; ms: number };
-type Day = { dayKey: string; totalMs: number; slices: Slice[] };
-
-function sliceLabel(slice: Slice): string {
+function sliceLabel(slice: FocusSlice): string {
   if (slice.name !== undefined) return slice.name;
   return slice.bucket === "private"
     ? copy.profile.privateBucket
     : copy.profile.noTask;
 }
 
-// The pick never changes after mount, so there is nothing to subscribe to.
+// The assignment never changes after mount, so there is nothing to subscribe to.
 const noSubscribe = () => () => {};
 
-// Draws are remembered for the page visit rather than the card's lifetime:
-// changing range unmounts the card while the new range loads, and a day whose
-// art came back different every time would read as a glitch. Keyed by user so
-// navigating between two profiles doesn't hand them the same sequence.
-const assigned = new Map<string, string>();
-let lastDrawn: string | null = null;
-
 /**
- * The image for one day: drawn at random the first time that day is shown and
- * kept from then on, so scrubbing back and forth across the chart never
- * reshuffles the art. Successive draws avoid each other, which keeps
- * neighbouring days from landing on the same picture.
+ * The image for one day, from the visit's banner assignment.
  *
  * The draw has to happen on the client — a cached server render would hand
  * every visitor the same sequence — so it goes through useSyncExternalStore:
- * null while rendering on the server and during hydration, the picked image
+ * null while rendering on the server and during hydration, the assigned image
  * immediately after.
  */
 function useDayBanner(banners: string[], key: string): string | null {
-  const getSnapshot = useCallback(() => {
-    const seen = assigned.get(key);
-    if (seen !== undefined) return seen;
-    const picked = pickBanner(banners, lastDrawn);
-    if (picked === null) return null;
-    assigned.set(key, picked);
-    lastDrawn = picked;
-    return picked;
-  }, [banners, key]);
-
+  const getSnapshot = useCallback(() => bannerFor(banners, key), [banners, key]);
   return useSyncExternalStore(noSubscribe, getSnapshot, () => null);
 }
 
@@ -67,26 +46,25 @@ function usePreloadedBanners(banners: string[]) {
 
 /**
  * One day's detail: the headline total beside that day's image, then the
- * per-category breakdown. This is exactly what `downloadCard` captures, so
- * anything that should not appear in a shared PNG belongs outside it.
+ * per-category breakdown.
  */
 export function DayCard({
   day,
   username,
   banners,
-  ref,
 }: {
-  day: Day;
+  day: FocusDay;
   username: string;
   banners: string[];
-  ref?: React.Ref<HTMLElement>;
 }) {
   usePreloadedBanners(banners);
+  // Keyed by user, so navigating between two profiles doesn't hand them the
+  // same sequence of images.
   const src = useDayBanner(banners, `${username}:${day.dayKey}`);
 
   // No rule above the card: the gap alone separates it from the chart.
   return (
-    <section ref={ref} className="mt-10">
+    <section className="mt-10">
       {/* A plain row already puts the first child on the right under dir=rtl,
           which is where the total belongs; the image trails on the left. */}
       <div className="flex items-stretch gap-4">
@@ -107,7 +85,7 @@ export function DayCard({
           </p>
         </div>
         <div className="relative relative aspect-square w-1/2 shrink-0 overflow-hidden">
-          <div className="absolute inset-0 z-10 bg-linear-to-t from-background to-transparent" />
+          <div className="absolute inset-0 z-10 bg-linear-to-t from-background via-background/20 to-transparent" />
           {src !== null && (
             <Image
               src={src}
