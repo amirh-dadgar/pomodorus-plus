@@ -8,7 +8,7 @@ import { TriangleAlert } from "lucide-react";
 // Note Turbopack can't decode AVIF, so the import is only ever a string — no
 // intrinsic width/height and no blurDataURL — which is why the image is sized
 // by its wrapper below instead of by the import.
-import hero from "@/public/banners/frieren-4.avif";
+import hero from "@/public/main.avif";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Feed } from "@/components/feed";
 import { LandingCta } from "@/components/landing-cta";
