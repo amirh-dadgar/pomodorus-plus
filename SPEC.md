@@ -18,6 +18,15 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 - Copy voice: extremely casual Gen-Z Persian (colloquial spelling, loanwords like فوکوس/چیل). Applies to all user-facing text including server error messages. All copy is centralized in `lib/copy.json`.
 - Persian digits everywhere (e.g. ۲۵:۰۰) and Jalali (Shamsi) dates, via `Intl` with `fa-IR-u-ca-persian`.
 - App name: **Pomodorus**.
+- **No layout shift from auth or data resolving.** Controls that depend on unresolved state reserve their exact final box rather than rendering nothing — the NavBar CTA, the landing CTA and today's focus. Reserving space is not guessing content: the placeholder never predicts which label wins, so shift is removed without reintroducing a flash of the wrong CTA.
+- The theme is monochrome, so nothing can be flagged by hue: `--destructive` is the same grey as `--muted-foreground`. Errors separate themselves by being full white, iconned and boxed instead.
+
+## Auth page
+
+- One route, `/login`, toggling between sign-in and sign-up. The NavBar is hidden here, so the page carries its own link back to the landing.
+- Sign-up states plainly that the username can never be changed, since there is no rename path.
+- Submitting shows a spinner and a waiting label, not just a disabled button.
+- Failures render as a bordered, iconned, full-white alert in an `aria-live` region — not as grey text indistinguishable from the field hints.
 
 ## Timer model (local-first)
 
@@ -26,7 +35,9 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 - The device that runs a session owns it: `startedAt` + `duration` live in local storage; start, countdown, completion, break auto-start, and cycle counting are all local and work fully offline.
 - Sessions survive refresh/tab close. If the app is closed when the end time passes, the session is finalized retroactively on next launch.
 - Convex is a log, not the source of truth: completed work sessions are appended to history on sync, whenever the device is next online.
-- Work durations: **25 or 55 minutes**, chosen per session on the start screen. No settings page.
+- Work durations: **25 or 55 minutes**, chosen per session on the start screen as two explicit adjacent options (the chosen one is filled). No settings page.
+- The start screen also shows **today's focus**: the current Tehran day's completed session count and total, read from the server. Signed-out, loading and offline all show a blank row of the same height; only a server-confirmed total may say the day is empty. See `docs/adr/0002-todays-focus-from-the-server.md`.
+- A running session shows a flat progress bar of elapsed share beneath the clock, measured against the real end time (so a dev fast session fills over its 3 seconds).
 - Short break: **5 min** after each completed session. Long break: **20 min** after every 4th completed session.
 - Breaks auto-start when a work session completes, and are skippable.
 - No pause. Controls are: start, cancel (work), skip (break).
@@ -43,7 +54,9 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 
 ## Pages & routing
 
-- `/` — public landing (no auth): app name, one-line pitch, the live feed, and a header button (signed-in → `/app`, signed-out → `/login`).
+- `/` — public landing (no auth), top to bottom: a full-bleed **hero** image band, the app name with a one-line pitch and the CTA (signed-in → `/app`, signed-out → `/login`), the **experimental notice**, a personal note about why the app exists, and the live feed. Plus the same header button in the NavBar.
+- The hero is one fixed image from `public/banners`, cropped to 16:9 from its square source and served unoptimized (the AVIF sources are already minimal; re-encoding them triples their size). It is deliberately not a random draw like the profile's banners — it is the LCP element, so it may not wait on a client-side pick.
+- The experimental notice is a static, non-dismissible alert saying the app is experimental and data may be lost. It sits after the CTA, and only on the landing.
 - `/app` — the timer app (auth required).
 - `/u/[username]` — public profile (no auth): username and the **focus chart** — a single minimal line of total focus time per Tehran day over a selected range (presets: last 7/30/90 days, default 7; no custom picker), zero-filled on empty days, Jalali axis labels. Only completed work sessions count; totals and breakdowns are computed from the sessions log.
 - Pointing at the chart (hover or touch drag) selects a day; a docked **day detail** panel below the chart (never a floating tooltip) shows that day's per-category rows sorted largest first, each with a progress bar sized as its share of the day's total. Defaults to the most recent day with data.
@@ -60,7 +73,7 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 - The feed shows **presence**: a best-effort advertisement published when an online client starts a session (or reconnects mid-session), self-expiring at the session's end time. It is advisory, not truth — an offline cancel can leave a stale entry for up to one session length; a session started offline appears late or not at all.
 - Shows users currently **working**: username (linked to their profile) + category name + remaining time. Private category → shown as a private task, name hidden.
 - Shows users currently **on break**: username + break label.
-- Idle users don't appear. Empty feed shows an "everybody's offline" message.
+- Idle users don't appear. The heading always renders and the body holds a row's height, so the section never vanishes: empty shows an "everybody's offline" message, offline shows the offline notice, and a query still in flight shows neither.
 
 ## Offline & PWA
 

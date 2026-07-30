@@ -16,8 +16,16 @@ The private login credential. Never exposed publicly; not a username.
 ### Pages
 
 **Landing**:
-The public root page anyone (signed-in or not) sees: minimal text plus the live feed.
+The public root page anyone (signed-in or not) sees, in order: the hero, the app name with its one-line pitch and the way in, the experimental notice, the personal note (`landing.sub`), and the live feed. Nothing on it is behind auth.
 _Avoid_: home, welcome page
+
+**Hero**:
+The image band that opens the Landing: one fixed picture from `public/banners`, full-bleed across the content frame and cropped to 16:9 from its square source. Fixed rather than drawn per visit like a [[Banner]] — it is the first thing painted, so it may not depend on a client-side draw. Its box is owned by the wrapper, not by the image's intrinsic size: Turbopack cannot decode AVIF, so the import yields a bare URL with no dimensions and no blur data. Served `unoptimized`, since re-encoding an already-minimal AVIF triples its bytes.
+_Avoid_: banner (that is the profile's per-day art), splash, masthead
+
+**Experimental notice**:
+The standing warning on the Landing that the app is experimental and may lose data. Static and not dismissible, placed after the CTA so it qualifies the offer rather than opening the page. Landing only — it is aimed at someone deciding whether to sign up, and the [[Timer app]] is meant to be free of chrome.
+_Avoid_: warning banner, disclaimer, toast
 
 **Timer app**:
 The signed-in working surface where sessions are started and run.
@@ -61,6 +69,10 @@ _Avoid_: server-authoritative session (the old model)
 One browser's own copy of the timer: the running session, the cycle counter, the cached category mirror, and the unsynced queues, held in local storage under one username. It owns whatever it runs. Every rule for changing it is one `apply(state, command, env)` in `lib/local/device.ts`, pure and with the clock handed in; `lib/local/store.ts` is the one adapter that binds it to local storage, `Date.now` and `crypto.randomUUID`.
 _Avoid_: client state, local store (that is the adapter, not the rules), reducer
 
+**Today's focus**:
+The line on the start screen giving the current Tehran day's completed work sessions and their total. The one part of the [[Timer app]] read from the server rather than from the [[Device]] (`sessions.todayFocus`, `docs/adr/0002-todays-focus-from-the-server.md`): local state keeps completed sessions only until they sync, so a local count would collapse to zero on reconnect. Signed out, loading and offline all render as a blank row of the same height — only a server-confirmed total may say the day is empty.
+_Avoid_: today's stats, daily total, streak
+
 **Fast session**:
 A dev-only session that completes after seconds of real time but is recorded and credited at its full nominal duration.
 _Avoid_: test session, mock session
@@ -85,8 +97,12 @@ _Avoid_: pending, dirty, offline data
 ### Navigation
 
 **NavBar**:
-The single shared navigation bar rendered on all authenticated public pages (Landing, Timer app, Profile). Always shows the app logo (icon only, no text). Conditionally shows a CTA (login/timer link), a profile link, or a timer badge. Auth-dependent buttons render nothing until the auth state resolves — no flash of wrong CTA.
+The single shared navigation bar rendered on all authenticated public pages (Landing, Timer app, Profile). Always shows the app logo (icon only, no text). Conditionally shows a CTA (login/timer link), a profile link, or a timer badge. Auth-dependent buttons never guess — but they now **reserve their box** rather than rendering nothing, so the bar keeps its height and the CTA its width while the auth state resolves. Being signed in without a cached username still counts as unresolved, up to a grace period, after which the CTA settles on the timer link so an unreachable `profiles.me` leaves a working link rather than a permanent placeholder.
 _Avoid_: header, app header, nav bar (two words)
+
+**Placeholder**:
+A box of a control's exact final size, held while the state that decides the control is still resolving. Used for the NavBar CTA, the Landing CTA and [[Today's focus]]. The rule is that reserving space is not the same as guessing content: the placeholder never predicts which label will win, so it removes layout shift without reintroducing the flash of wrong CTA the NavBar was written to avoid.
+_Avoid_: loading state, spinner, fallback
 
 **Timer badge**:
 A clickable indicator in the NavBar showing the remaining time of a running session (e.g. `۱۸:۴۲`). Navigates to `/app` on tap. Only visible while a session is active. Positioned near the CTA in the nav.
