@@ -4,7 +4,6 @@ import { useConvexAuth } from "convex/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +22,40 @@ const HIDE_ON = ["/login", "/offline"];
 // the bar is exactly as tall and the CTA exactly as wide before the auth state
 // resolves as after. Wide enough for the longer of «لاگین کن» and «پروفایل».
 const CTA_BOX = "h-8 min-w-24";
+
+/**
+ * The tomato on its own — the app's mark with the squircle tile, its gradient
+ * and its edge stroke dropped.
+ *
+ * The tile exists to sit on a dock or a home screen; inside the app it is a
+ * rounded box in a UI with `--radius: 0rem`, on a background it already
+ * matches. So the nav draws the line-art alone, inline and in `currentColor`,
+ * which also means it tracks the foreground and has no load state to shift
+ * around. The viewBox is cropped to the artwork so the glyph fills its box
+ * rather than floating in the tile's padding.
+ *
+ * This is the one place the mark appears without its tile; `/icon.svg` and
+ * `scripts/` remain the source for the favicon, PWA and apple-touch icons.
+ */
+function Logo() {
+  return (
+    <svg
+      viewBox="88 105 336 336"
+      className="size-8"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={26}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <ellipse cx="256" cy="308" rx="132" ry="118" />
+      <path d="M256 196 C 236 170, 196 160, 158 176" />
+      <path d="M256 196 C 276 170, 316 160, 354 176" />
+      <path d="M256 196 C 250 168, 258 138, 286 120" />
+    </svg>
+  );
+}
 
 export function NavBar() {
   const pathname = usePathname();
@@ -48,21 +81,8 @@ export function NavBar() {
     // h-14 rather than padding alone: the bar keeps its height even in the
     // beat before the auth state resolves, so nothing below it ever moves.
     <header className="flex h-14 w-full shrink-0 items-center justify-between px-6">
-      {/* The real mark, not a stand-in glyph: /icon.svg is the same file Next
-          serves as the favicon and that scripts/gen-icons.mjs renders the PWA
-          icons from, so the bar cannot drift from the installed app. Empty alt
-          because the link already carries the name. Unoptimized since the
-          optimizer refuses SVG without dangerouslyAllowSVG, and a 1KB vector
-          has nothing to gain from it anyway. */}
       <Link href="/" aria-label={copy.app.name}>
-        <Image
-          src="/icon.svg"
-          alt=""
-          width={26}
-          height={26}
-          unoptimized
-          priority
-        />
+        <Logo />
       </Link>
       {/* The badge sits inline-start of the CTA, so it materialises into empty
           space rather than pushing the CTA off the frame edge. */}
