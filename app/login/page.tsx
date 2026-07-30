@@ -4,6 +4,9 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConvexError } from "convex/values";
+import Link from "next/link";
+import { ArrowRight, Loader2, TriangleAlert } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +59,9 @@ export default function LoginPage() {
                 dir="ltr"
               />
               <p className="text-xs text-muted-foreground">{copy.login.usernameHint}</p>
+              {/* Usernames are immutable with no rename path, so say so before
+                  someone picks one, not after. */}
+              <p className="text-xs text-foreground">{copy.login.usernameFinal}</p>
             </div>
           )}
           <div className="space-y-2">
@@ -68,9 +74,31 @@ export default function LoginPage() {
             <Label htmlFor="password">{copy.login.password}</Label>
             <Input id="password" name="password" type="password" required dir="ltr" />
           </div>
-          {error && <p className="text-sm text-muted-foreground">{error}</p>}
+          {/* The theme is monochrome, so an error can't be red — it separates
+              itself from the grey hints around it by being full white, boxed
+              and iconned instead. aria-live so it is announced, since it
+              appears well below the field that caused it. */}
+          <div aria-live="polite">
+            {error && (
+              <Alert className="text-foreground">
+                <TriangleAlert />
+                <AlertDescription className="text-foreground">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
           <Button type="submit" className="w-full" disabled={pending}>
-            {flow === "signIn" ? copy.login.signIn : copy.login.signUp}
+            {pending ? (
+              <>
+                <Loader2 className="animate-spin" />
+                {copy.login.signingIn}
+              </>
+            ) : flow === "signIn" ? (
+              copy.login.signIn
+            ) : (
+              copy.login.signUp
+            )}
           </Button>
         </form>
         <button
@@ -83,6 +111,15 @@ export default function LoginPage() {
         >
           {flow === "signIn" ? copy.login.toSignUp : copy.login.toSignIn}
         </button>
+        {/* The NavBar is hidden on this route, so without this a signed-out
+            visitor has no way back to the landing but the browser's own. */}
+        <Link
+          href="/"
+          className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowRight className="size-3" />
+          {copy.login.backHome}
+        </Link>
       </div>
     </main>
   );
