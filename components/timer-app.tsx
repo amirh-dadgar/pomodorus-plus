@@ -10,7 +10,7 @@ import { faClock, faDigits, faDuration } from "@/lib/format";
 import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
 import { OfflineIndicator } from "@/components/offline-indicator";
-import { Play, SkipForward, X } from "lucide-react";
+import { Minus, Play, Plus, SkipForward, X } from "lucide-react";
 import {
   useLocalIdentity,
   useLocalState,
@@ -202,29 +202,30 @@ export function TimerApp() {
           <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
 
           <section className="flex w-full flex-col border border-t-0 px-10 py-20 items-center gap-6">
-            <p className="font-mono text-7xl font-bold tabular-nums tracking-tight">
-              {faClock(choice * 60_000)}
-            </p>
-            {/* There are only two durations, so the old ± pair always had one
-                half disabled — a stepper that couldn't step. Both options are
-                spelled out instead, and the chosen one is simply the filled
-                button. */}
-            <div
-              className="flex gap-2"
-              role="radiogroup"
-              aria-label={copy.timer.kindWork}
-            >
-              {WORK_MINUTES.map((minutes) => (
-                <Button
-                  key={minutes}
-                  role="radio"
-                  aria-checked={choice === minutes}
-                  variant={choice === minutes ? "default" : "outline"}
-                  onClick={() => setChoice(minutes)}
-                >
-                  {t(copy.timer.minutes, { m: faDigits(minutes) })}
-                </Button>
-              ))}
+            {/* The clock is the control: ± steps between the two durations,
+                and the button for the end you are already on is disabled. */}
+            <div className="flex items-center gap-4" dir="ltr">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t(copy.timer.minutes, { m: faDigits(25) })}
+                disabled={choice === 25}
+                onClick={() => setChoice(25)}
+              >
+                <Minus className="size-4" />
+              </Button>
+              <p className="font-mono text-7xl font-bold tabular-nums tracking-tight">
+                {faClock(choice * 60_000)}
+              </p>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t(copy.timer.minutes, { m: faDigits(55) })}
+                disabled={choice === 55}
+                onClick={() => setChoice(55)}
+              >
+                <Plus className="size-4" />
+              </Button>
             </div>
             <Button
               size="lg"

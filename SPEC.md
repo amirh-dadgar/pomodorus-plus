@@ -35,7 +35,7 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 - The device that runs a session owns it: `startedAt` + `duration` live in local storage; start, countdown, completion, break auto-start, and cycle counting are all local and work fully offline.
 - Sessions survive refresh/tab close. If the app is closed when the end time passes, the session is finalized retroactively on next launch.
 - Convex is a log, not the source of truth: completed work sessions are appended to history on sync, whenever the device is next online.
-- Work durations: **25 or 55 minutes**, chosen per session on the start screen as two explicit adjacent options (the chosen one is filled). No settings page.
+- Work durations: **25 or 55 minutes**, stepped through on the start screen with a − / + pair either side of the clock; the button for the end you are already on is disabled. No settings page.
 - The start screen also shows **today's focus**: the current Tehran day's completed session count and total, read from the server. Signed-out, loading and offline all show a blank row of the same height; only a server-confirmed total may say the day is empty. See `docs/adr/0002-todays-focus-from-the-server.md`.
 - A running session shows a flat progress bar of elapsed share beneath the clock, measured against the real end time (so a dev fast session fills over its 3 seconds).
 - Short break: **5 min** after each completed session. Long break: **20 min** after every 4th completed session.
