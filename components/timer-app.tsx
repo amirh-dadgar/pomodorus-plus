@@ -1,12 +1,10 @@
 "use client";
 
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/convex/_generated/api";
 import { copy, t } from "@/lib/copy";
-import { faClock, faDigits, faDuration } from "@/lib/format";
+import { faClock, faDigits } from "@/lib/format";
 import { playDing, unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
 import { OfflineIndicator } from "@/components/offline-indicator";
@@ -14,7 +12,6 @@ import { Minus, Play, Plus, SkipForward, X } from "lucide-react";
 import {
   useLocalIdentity,
   useLocalState,
-  useOnline,
   useTimerNow,
 } from "@/lib/local/hooks";
 import { effectiveCategories } from "@/lib/local/device";
@@ -38,28 +35,28 @@ type DurationChoice = (typeof WORK_MINUTES)[number];
  * as an empty row of the same height — only a total the server actually
  * confirmed is allowed to say «امروز تمرکز نکردی کلا».
  */
-function TodayFocus() {
-  const { isAuthenticated } = useConvexAuth();
-  const online = useOnline();
-  const today = useQuery(api.sessions.todayFocus, isAuthenticated ? {} : "skip");
-
-  return (
-    <div className="flex h-5 items-center justify-center">
-      {today === undefined && isAuthenticated && online ? (
-        <Skeleton className="h-3.5 w-40 rounded-none" />
-      ) : today ? (
-        <p className="text-sm text-muted-foreground">
-          {today.count === 0
-            ? copy.timer.todayEmpty
-            : t(copy.timer.todaySummary, {
-                count: faDigits(today.count),
-                duration: faDuration(today.totalMs),
-              })}
-        </p>
-      ) : null}
-    </div>
-  );
-}
+// function TodayFocus() {
+//   const { isAuthenticated } = useConvexAuth();
+//   const online = useOnline();
+//   const today = useQuery(api.sessions.todayFocus, isAuthenticated ? {} : "skip");
+//
+//   return (
+//     <div className="flex h-5 items-center justify-center">
+//       {today === undefined && isAuthenticated && online ? (
+//         <Skeleton className="h-3.5 w-40 rounded-none" />
+//       ) : today ? (
+//         <p className="text-sm text-muted-foreground">
+//           {today.count === 0
+//             ? copy.timer.todayEmpty
+//             : t(copy.timer.todaySummary, {
+//                 count: faDigits(today.count),
+//                 duration: faDuration(today.totalMs),
+//               })}
+//         </p>
+//       ) : null}
+//     </div>
+//   );
+// }
 
 export function TimerApp() {
   // The timer is local-first: everything below renders from the local
@@ -159,12 +156,19 @@ export function TimerApp() {
           {/* Elapsed share of the session. Measured against the real end time,
               so a dev fast session fills over its three seconds rather than
               creeping along its nominal 25 minutes. Fills from the right,
-              inheriting the page's RTL direction. */}
+              inheriting the page's RTL direction. Keyed by session id so a new
+              session mounts at 0% (full gray) instead of transitioning from the
+              previous session's finished fill. The 2Hz clock can lag a beat
+              behind a just-started session, making the share negative; a
+              negative percentage width is invalid CSS, so the fill would fall
+              back to width:auto — a full-white flash until the next tick. The
+              clamp keeps the width in [0, 100] so it is always a valid bar. */}
           <div className="h-1 w-full max-w-xs bg-muted" aria-hidden>
             <div
+              key={running.id}
               className="h-full bg-foreground transition-[width] duration-500 ease-linear"
               style={{
-                width: `${(1 - remainingMs / (endAt(running) - running.startedAt)) * 100}%`,
+                width: `${Math.max(0, 1 - remainingMs / (endAt(running) - running.startedAt)) * 100}%`,
               }}
             />
           </div>
@@ -257,7 +261,7 @@ export function TimerApp() {
               <Play />
               {copy.timer.start}
             </Button>
-            <TodayFocus />
+            {/* TodayFocus — the today's-total label — is commented out for now. */}
           </section>
         </div>
       )}

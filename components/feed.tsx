@@ -23,36 +23,14 @@ export function Feed() {
   // hasn't re-evaluated yet.
   const active = (feed ?? []).filter((e) => isLive(e, now));
 
-  // The heading always renders, and the body keeps one row's worth of height
-  // whatever it is saying: the feed closes the landing page, and a section
-  // that vanishes when nobody is working leaves the page ending mid-air.
-  // The feed is live-only, so offline it degrades to an honest little notice.
-  if (!online || active.length === 0) {
-    return (
-      <section className="w-full space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          {copy.feed.title}
-        </h2>
-        {/* Blank, not «nobody's online», while the query is still in flight:
-            the row holds its height either way, so there is nothing to gain
-            from asserting an emptiness we haven't heard back about yet. */}
-        <p className="min-h-6 text-sm text-muted-foreground">
-          {!online
-            ? copy.offline.feedOffline
-            : feed === undefined
-              ? ""
-              : copy.feed.empty}
-        </p>
-      </section>
-    );
-  }
+  // The feed is live-only: offline it has nothing to show, and when nobody is
+  // working it is simply absent — a card that pops in and out as people start
+  // and finish beats an empty section that closes the landing page.
+  if (!online || active.length === 0) return null;
 
   return (
-    <section className="w-full space-y-3">
-      <h2 className="text-sm font-medium text-muted-foreground">
-        {copy.feed.title}
-      </h2>
-      <ul className="space-y-2">
+    <section className="w-full rounded-none border border-border bg-card">
+      <ul className="divide-y divide-border">
         {active.map((entry) => {
           const remainingMs = Math.min(
             entry.startedAt + entry.durationMs - now,
@@ -62,7 +40,7 @@ export function Feed() {
           return (
             <li
               key={entry.id}
-              className="flex items-center justify-between gap-3 text-sm"
+              className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
             >
               <span className="truncate">
                 <Link

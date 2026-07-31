@@ -55,7 +55,10 @@ export default function LoginPage() {
         <Alert>
           <TriangleAlert />
           <AlertTitle>{copy.landing.experimentalTitle}</AlertTitle>
-          <AlertDescription>{copy.landing.experimental}</AlertDescription>
+          <AlertDescription>
+            {copy.landing.experimental}
+            <p>{copy.landing.experimentalVibes}</p>
+          </AlertDescription>
         </Alert>
       </div>
 
