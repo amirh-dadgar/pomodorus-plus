@@ -89,7 +89,7 @@ export default function RootLayout({
           <ConvexClientProvider>
             <SyncEngine />
             <SwRegister />
-            <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col border-x-0 bg-background lg:border-x lg:border-border/50">
+            <div className="mx-auto overflow-x-hidden flex min-h-screen w-full max-w-xl flex-col border-x-0 bg-background lg:border-x lg:border-border/50">
               <NavBar />
               {children}
             </div>

@@ -21,8 +21,12 @@ export function Landing() {
           square, and a square at this width would push everything that says
           what the app is below the fold. The wrapper owns the box, so the
           space is reserved before the image has loaded or been measured. */}
-      <div className="relative aspect-video w-full shrink-0 mt-5">
-        <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t via-background/20 from-background to-transparent" />
+      <div className="relative overflow-hidden aspect-video w-full shrink-0 mt-5">
+        <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t items-end via-background/50 from-background to-transparent flex justify-center">
+          <h1 className="lg:text-6xl text-3xl tracking-widest font-light uppercase text-yellow-600">
+            {copy.landing.tagline}
+          </h1>
+        </div>
         <Image
           src={hero}
           alt=""
@@ -37,9 +41,8 @@ export function Landing() {
         />
       </div>
 
-      <div className="flex flex-col gap-10 px-6 py-10">
-        <section className="flex flex-col items-start gap-4">
-          <h1 className="text-4xl tracking-tight">{copy.landing.tagline}</h1>
+      <div className="flex flex-col gap-10 px-6">
+        <section className="flex flex-col items-center gap-4">
           <p className="text-muted-foreground">{copy.landing.pitch}</p>
           <LandingCta />
         </section>
