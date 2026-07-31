@@ -6,9 +6,10 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 
 - Next.js (App Router, TypeScript) + Tailwind + shadcn/ui, with `motion` for transitions
 - Convex (database, realtime, server functions)
-- Convex Auth — Password provider only. No email verification, no password reset, no email infrastructure. Email is the private login identifier and is never shown publicly.
-- Signup fields: email, password, **username** (unique, immutable, `[a-z0-9_]{3,20}`; the only public identity — shown in the feed, on profiles, and in profile URLs. There is no display name).
-- No password or email-format constraints: any non-empty strings are accepted as credentials (even `test` / `test`) — casual personal app, no email infrastructure to justify format checks.
+- Convex Auth — credentials only, username + password. No email anywhere: no address is collected, verified or stored, and there is no password reset (nowhere to send it).
+- Login fields: **username** (unique, immutable, `[a-z0-9_]{3,20}`; the only public identity — shown in the feed, on profiles, and in profile URLs. There is no display name) and password. The username is both the public handle and the login credential.
+- One flow, not two: submitting an unknown username creates that account, a known one signs in, and a known one with the wrong password is the only failure. Accepted cost — a mistyped username makes a new empty account rather than saying «wrong password».
+- No password constraints: any non-empty string is accepted (even `test` / `test`) — casual personal app.
 
 ## Look & language
 
@@ -23,8 +24,8 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 
 ## Auth page
 
-- One route, `/login`, toggling between sign-in and sign-up. The NavBar is hidden here, so the page carries its own link back to the landing.
-- Sign-up states plainly that the username can never be changed, since there is no rename path.
+- One route, `/login`, with one form and one button — no sign-in/sign-up toggle, since the server decides which it is. The NavBar is hidden here, so the page carries its own link back to the landing.
+- The page states plainly that the username can never be changed, since there is no rename path, and that an unused username signs you up on the spot.
 - Submitting shows a spinner and a waiting label, not just a disabled button.
 - Failures render as a bordered, iconned, full-white alert in an `aria-live` region — not as grey text indistinguishable from the field hints.
 

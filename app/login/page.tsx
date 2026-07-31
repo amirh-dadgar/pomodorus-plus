@@ -12,10 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { copy } from "@/lib/copy";
 
+/**
+ * One form, one button, two fields.
+ *
+ * There is no sign-in/sign-up toggle because there is nothing to choose
+ * between: the server takes a username and a password and either signs you
+ * into that account or creates it (see `convex/auth.ts`). The page never has
+ * to know which of the two happened.
+ */
 export default function LoginPage() {
   const { signIn } = useAuthActions();
   const router = useRouter();
-  const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -23,19 +30,18 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setPending(true);
-    const formData = new FormData(event.currentTarget);
-    formData.set("flow", flow);
     try {
-      await signIn("password", formData);
+      await signIn("password", new FormData(event.currentTarget));
       router.push("/app");
     } catch (e) {
-      if (e instanceof ConvexError && typeof e.data === "string") {
-        setError(e.data);
-      } else if (flow === "signUp") {
-        setError(copy.login.signUpFailed);
-      } else {
-        setError(copy.login.badCredentials);
-      }
+      // The server states its own case in Persian for everything it can
+      // name; anything else is a network or deployment problem, and the
+      // wrong-password line is the likeliest reading of a bare failure.
+      setError(
+        e instanceof ConvexError && typeof e.data === "string"
+          ? e.data
+          : copy.login.badCredentials,
+      );
       setPending(false);
     }
   }
@@ -43,36 +49,42 @@ export default function LoginPage() {
   return (
     <main className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-xs space-y-8">
-        <h1 className="text-center text-2xl font-bold tracking-tight">{copy.app.name}</h1>
+        <h1 className="text-center text-2xl font-bold tracking-tight">
+          {copy.app.name}
+        </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {flow === "signUp" && (
-            <div className="space-y-2">
-              <Label htmlFor="username">{copy.login.username}</Label>
-              <Input
-                id="username"
-                name="username"
-                required
-                minLength={3}
-                maxLength={20}
-                pattern="[a-z0-9_]+"
-                title={copy.login.usernameHint}
-                dir="ltr"
-              />
-              <p className="text-xs text-muted-foreground">{copy.login.usernameHint}</p>
-              {/* Usernames are immutable with no rename path, so say so before
-                  someone picks one, not after. */}
-              <p className="text-xs text-foreground">{copy.login.usernameFinal}</p>
-            </div>
-          )}
           <div className="space-y-2">
-            <Label htmlFor="email">{copy.login.email}</Label>
-            {/* type="text": any string works as the login identifier ("test" is
-                fine); inputMode keeps the email keyboard on mobile. */}
-            <Input id="email" name="email" type="text" inputMode="email" required dir="ltr" />
+            <Label htmlFor="username">{copy.login.username}</Label>
+            <Input
+              id="username"
+              name="username"
+              autoFocus
+              required
+              minLength={3}
+              maxLength={20}
+              pattern="[a-z0-9_]+"
+              title={copy.login.usernameHint}
+              autoComplete="username"
+              dir="ltr"
+            />
+            <p className="text-xs text-muted-foreground">
+              {copy.login.usernameHint}
+            </p>
+            {/* Usernames are immutable with no rename path, and this form can
+                mint one on the spot — so say both before someone submits,
+                not after. */}
+            <p className="text-xs text-foreground">{copy.login.usernameFinal}</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{copy.login.password}</Label>
-            <Input id="password" name="password" type="password" required dir="ltr" />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              dir="ltr"
+            />
           </div>
           {/* The theme is monochrome, so an error can't be red — it separates
               itself from the grey hints around it by being full white, boxed
@@ -94,23 +106,16 @@ export default function LoginPage() {
                 <Loader2 className="animate-spin" />
                 {copy.login.signingIn}
               </>
-            ) : flow === "signIn" ? (
-              copy.login.signIn
             ) : (
-              copy.login.signUp
+              copy.login.go
             )}
           </Button>
         </form>
-        <button
-          type="button"
-          className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
-          onClick={() => {
-            setError(null);
-            setFlow(flow === "signIn" ? "signUp" : "signIn");
-          }}
-        >
-          {flow === "signIn" ? copy.login.toSignUp : copy.login.toSignIn}
-        </button>
+        {/* Said once, under the button: the single button is only unambiguous
+            if you know that a new username is a signup. */}
+        <p className="text-center text-xs text-muted-foreground">
+          {copy.login.newAccountHint}
+        </p>
         {/* The NavBar is hidden on this route, so without this a signed-out
             visitor has no way back to the landing but the browser's own. */}
         <Link

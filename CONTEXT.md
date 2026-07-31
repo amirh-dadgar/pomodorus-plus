@@ -7,11 +7,8 @@ A minimal Persian-language pomodoro app with a realtime global activity feed, pu
 ### Identity
 
 **Username**:
-A user's unique, immutable, URL-safe public handle (lowercase latin letters, digits, underscore). The only public identity: shown in the feed, on profiles, and in profile URLs. There is no separate display name.
-_Avoid_: handle, slug, display name (removed concept)
-
-**Email**:
-The private login credential. Never exposed publicly; not a username.
+A user's unique, immutable, URL-safe public handle (lowercase latin letters, digits, underscore). The only public identity: shown in the feed, on profiles, and in profile URLs. There is no separate display name. It is also the login credential — the account is filed under it — so it is public and secret-adjacent at once: the password is the only secret.
+_Avoid_: handle, slug, display name (removed concept), email (removed concept — no address is collected or stored)
 
 ### Pages
 

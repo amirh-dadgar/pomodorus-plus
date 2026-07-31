@@ -6,9 +6,15 @@ export default defineSchema({
   ...authTables,
 
   // authTables.users minus `name`, plus `username`: the unique, immutable
-  // public handle shown in the feed and used in profile URLs (/u/[username]).
+  // public handle shown in the feed and used in profile URLs (/u/[username]),
+  // and since the move to username-only login the login credential too.
   users: defineTable({
     image: v.optional(v.string()),
+    // Legacy: email was the login identifier before `convex/auth.ts` moved to
+    // usernames. Nothing writes these any more and `migrations:usernameLogin`
+    // clears them; the field and its index stay only because the auth library
+    // still reads them on account-linking paths this app never takes. Safe to
+    // delete once the migration has run on every deployment.
     email: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),
     phone: v.optional(v.string()),

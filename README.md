@@ -61,7 +61,7 @@ npm run dev
 
 Open **https://localhost:3000** — note the **https**. The dev server runs TLS via `next dev --experimental-https`, because notifications and service workers need a secure context. Next generates a self-signed certificate into `certificates/` on first run; your browser will warn about it once, and you accept it.
 
-Sign up with any email and password — there are no format rules and no email verification, so `test` / `test` works. The username (`[a-z0-9_]{3,20}`) is your only public identity and cannot be changed later.
+Sign in with a username (`[a-z0-9_]{3,20}`) and a password. There is no separate signup: a username nobody has taken is created on the spot, and any non-empty password is accepted, so `test` / `test` works. The username is your only public identity and cannot be changed later.
 
 ## Everyday commands
 

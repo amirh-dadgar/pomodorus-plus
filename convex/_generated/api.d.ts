@@ -13,6 +13,7 @@ import type * as categories from "../categories.js";
 import type * as chartData from "../chartData.js";
 import type * as days from "../days.js";
 import type * as http from "../http.js";
+import type * as migrations from "../migrations.js";
 import type * as profiles from "../profiles.js";
 import type * as sessions from "../sessions.js";
 import type * as sync from "../sync.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   chartData: typeof chartData;
   days: typeof days;
   http: typeof http;
+  migrations: typeof migrations;
   profiles: typeof profiles;
   sessions: typeof sessions;
   sync: typeof sync;
