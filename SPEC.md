@@ -25,7 +25,7 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 ## Auth page
 
 - One route, `/login`, with one form and one button — no sign-in/sign-up toggle, since the server decides which it is. The NavBar is hidden here, so the page carries its own link back to the landing.
-- The page states plainly that the username can never be changed, since there is no rename path, and that an unused username signs you up on the spot.
+- Kept bare: the username field's format hint is the only standing text, and the experimental notice is the only other thing on the page. Neither the immutability of the username nor the fact that an unused one signs you up is spelled out.
 - Submitting shows a spinner and a waiting label, not just a disabled button.
 - Failures render as a bordered, iconned, full-white alert in an `aria-live` region — not as grey text indistinguishable from the field hints.
 

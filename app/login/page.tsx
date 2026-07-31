@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ConvexError } from "convex/values";
 import Link from "next/link";
 import { ArrowRight, Loader2, TriangleAlert } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,7 +49,8 @@ export default function LoginPage() {
   return (
     <main className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-xs space-y-8">
-        <h1 className="text-center text-2xl font-bold tracking-tight">
+        {/* Set like the hero's title — same treatment, its own size. */}
+        <h1 className="text-center text-2xl font-light tracking-widest uppercase text-yellow-600">
           {copy.app.name}
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -70,10 +71,6 @@ export default function LoginPage() {
             <p className="text-xs text-muted-foreground">
               {copy.login.usernameHint}
             </p>
-            {/* Usernames are immutable with no rename path, and this form can
-                mint one on the spot — so say both before someone submits,
-                not after. */}
-            <p className="text-xs text-foreground">{copy.login.usernameFinal}</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{copy.login.password}</Label>
@@ -111,11 +108,13 @@ export default function LoginPage() {
             )}
           </Button>
         </form>
-        {/* Said once, under the button: the single button is only unambiguous
-            if you know that a new username is a signup. */}
-        <p className="text-center text-xs text-muted-foreground">
-          {copy.login.newAccountHint}
-        </p>
+        {/* The same standing warning the landing carries, repeated here: this
+            is the last screen before an account exists. */}
+        <Alert>
+          <TriangleAlert />
+          <AlertTitle>{copy.landing.experimentalTitle}</AlertTitle>
+          <AlertDescription>{copy.landing.experimental}</AlertDescription>
+        </Alert>
         {/* The NavBar is hidden on this route, so without this a signed-out
             visitor has no way back to the landing but the browser's own. */}
         <Link

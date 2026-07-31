@@ -21,7 +21,7 @@ The image band that opens the Landing: one fixed picture from `public/banners`, 
 _Avoid_: banner (that is the profile's per-day art), splash, masthead
 
 **Experimental notice**:
-The standing warning on the Landing that the app is experimental and may lose data. Static and not dismissible, placed after the CTA so it qualifies the offer rather than opening the page. Landing only — it is aimed at someone deciding whether to sign up, and the [[Timer app]] is meant to be free of chrome.
+The standing warning that the app is experimental and may lose data. Static and not dismissible. It appears twice, on both screens where someone is deciding whether to sign up: on the Landing after the CTA, so it qualifies the offer rather than opening the page, and on the login page below the button. Never in the [[Timer app]], which is meant to be free of chrome.
 _Avoid_: warning banner, disclaimer, toast
 
 **Timer app**:
