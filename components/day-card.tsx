@@ -75,16 +75,16 @@ export function DayCard({
           {/* The unit sits under the clock rather than beside it: a bare h:mm
               says nothing about what was counted, and at this size there is no
               room alongside on a phone. */}
-          <p className="mt-1 text-5xl leading-none font-bold sm:text-6xl">
+          <p className="mt-1 text-4xl leading-none font-bold sm:text-6xl">
             {faHourClock(day.totalMs)}
           </p>
           {/* Set like the clock, not like a caption: the two read as one
               phrase, so the unit should not look like a footnote to it. */}
-          <p className="mt-1.5 text-lg font-bold">
+          <p className="mt-1.5 text-base font-bold sm:text-lg">
             {copy.profile.focusedHours}
           </p>
         </div>
-        <div className="relative relative aspect-square w-1/2 shrink-0 overflow-hidden">
+        <div className="relative aspect-square w-1/2 shrink-0 overflow-hidden">
           <div className="absolute inset-0 z-10 bg-linear-to-t from-background via-background/20 to-transparent" />
           {src !== null && (
             <Image
@@ -106,9 +106,9 @@ export function DayCard({
           <li key={sliceLabel(slice)}>
             <div className="flex items-baseline justify-between gap-3 text-xs">
               <span
-                className={
+                className={`truncate ${
                   slice.name === undefined ? "text-muted-foreground" : ""
-                }
+                }`}
               >
                 {sliceLabel(slice)}
               </span>

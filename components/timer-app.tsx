@@ -138,10 +138,12 @@ export function TimerApp() {
   );
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-6">
+    <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6">
       {running && remainingMs !== null ? (
         <section className="flex w-full flex-col items-center gap-6">
-          <p className="text-muted-foreground">
+          {/* A 40-character category name has no spaces to break on, so it is
+              clipped rather than allowed to widen the column. */}
+          <p className="max-w-full truncate text-center text-muted-foreground">
             {running.kind === "work"
               ? (effectiveCategories(state).find(
                   (c) => c.clientId === running.categoryClientId,
@@ -149,7 +151,7 @@ export function TimerApp() {
               : KIND_LABEL[running.kind]}
           </p>
           <p
-            className="font-mono text-7xl font-bold tabular-nums tracking-tight"
+            className="font-mono text-6xl font-bold tabular-nums tracking-tight sm:text-7xl"
             dir="ltr"
           >
             {faClock(remainingMs)}
@@ -198,13 +200,15 @@ export function TimerApp() {
           )}
         </section>
       ) : (
-        <div className="w-full grid">
+        <div className="grid w-full min-w-0">
           <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
 
-          <section className="flex w-full flex-col border border-t-0 px-10 py-20 items-center gap-6">
+          {/* The padding is the phone constraint here, not the type: at the
+              desktop px-10 the ±/clock row alone is wider than a 360px frame. */}
+          <section className="flex w-full min-w-0 flex-col items-center gap-6 border border-t-0 px-3 py-12 sm:px-10 sm:py-20">
             {/* The clock is the control: ± steps between the two durations,
                 and the button for the end you are already on is disabled. */}
-            <div className="flex items-center gap-4" dir="ltr">
+            <div className="flex items-center gap-2 sm:gap-4" dir="ltr">
               <Button
                 variant="outline"
                 size="icon"
@@ -214,7 +218,7 @@ export function TimerApp() {
               >
                 <Minus className="size-4" />
               </Button>
-              <p className="font-mono text-7xl font-bold tabular-nums tracking-tight">
+              <p className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-7xl">
                 {faClock(choice * 60_000)}
               </p>
               <Button

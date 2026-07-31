@@ -90,11 +90,25 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Nothing below is allowed to overflow sideways — the fixes for that live
+       at the components. This is the backstop so a future one-off can't hand
+       the page a horizontal scrollbar. `clip` rather than `hidden`: `hidden`
+       would make the body a scroll container and break `position: sticky`. */
+    overflow-x: clip;
   }
   html {
     @apply font-sans;
     /* Global scale-up: everything rem-based (type, spacing, controls)
-       grows together — 16px base was too small for Persian text. */
-    font-size: 112.5%;
+       grows together — 16px base was too small for Persian text.
+       Held one notch down on phones: at 18px the same rem-based paddings and
+       controls were what pushed rows (the timer's ±/clock especially) past a
+       360px frame. Breakpoint matches Tailwind's `sm` — rem in a media query
+       is always the browser's 16px, not this value. */
+    font-size: 106.25%;
+  }
+  @media (width >= 40rem) {
+    html {
+      font-size: 112.5%;
+    }
   }
 }

@@ -22,8 +22,12 @@ export function Landing() {
           what the app is below the fold. The wrapper owns the box, so the
           space is reserved before the image has loaded or been measured. */}
       <div className="relative overflow-hidden aspect-video w-full shrink-0 mt-5">
-        <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t items-end via-background/50 from-background to-transparent flex justify-center">
-          <h1 className="lg:text-6xl text-3xl tracking-widest font-light uppercase text-yellow-600">
+        {/* The title sits in the bottom of the scrim, where the gradient is
+            opaque background — the only band where the type is legible
+            whatever the image is doing behind it. The inset keeps a wide
+            tracking-widest title off the frame edges. */}
+        <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t items-end via-background/50 from-background to-transparent flex justify-center px-6 pb-4">
+          <h1 className="lg:text-6xl text-3xl text-center tracking-widest font-light uppercase text-yellow-600">
             {copy.landing.tagline}
           </h1>
         </div>
@@ -31,7 +35,9 @@ export function Landing() {
           src={hero}
           alt=""
           fill
-          priority
+          // `priority` is deprecated as of Next 16; `preload` is the same
+          // <link rel=preload> for what is unambiguously the LCP element.
+          preload
           // The source is an already-optimal 11KB AVIF at 941px. Running it
           // through the optimizer re-encodes it to a 34KB WebP (42KB JPEG for
           // older clients) — three times the bytes for the LCP image.
@@ -41,9 +47,13 @@ export function Landing() {
         />
       </div>
 
-      <div className="flex flex-col gap-10 px-6">
+      <div className="flex flex-col gap-8 px-6 sm:gap-10">
+        {/* No second heading here: the tagline lives in the hero, and the page
+            gets one h1, printed once. */}
         <section className="flex flex-col items-center gap-4">
-          <p className="text-muted-foreground">{copy.landing.pitch}</p>
+          <p className="text-center text-sm text-muted-foreground sm:text-base">
+            {copy.landing.pitch}
+          </p>
           <LandingCta />
         </section>
 
@@ -55,7 +65,7 @@ export function Landing() {
           <AlertDescription>{copy.landing.experimental}</AlertDescription>
         </Alert>
 
-        <p className="text-sm leading-8 text-muted-foreground">
+        <p className="text-xs leading-7 text-muted-foreground sm:text-sm sm:leading-8">
           {copy.landing.sub}
         </p>
 
