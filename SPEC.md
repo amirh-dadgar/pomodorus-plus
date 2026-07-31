@@ -55,9 +55,9 @@ See `docs/adr/0001-local-first-timer.md` for why this replaced the original serv
 
 ## Pages & routing
 
-- `/` — public landing (no auth), top to bottom: a full-bleed **hero** image band, the app name with a one-line pitch and the CTA (signed-in → `/app`, signed-out → `/login`), the **experimental notice**, a personal note about why the app exists, and the live feed. Plus the same header button in the NavBar.
+- `/` — public landing (no auth), top to bottom: a full-bleed **hero** image band carrying the app name, a one-line pitch and the CTA (signed-in → `/app`, signed-out → `/login`), a personal note about why the app exists, and the live feed. Plus the same header button in the NavBar.
 - The hero is one fixed image from `public/banners`, cropped to 16:9 from its square source and served unoptimized (the AVIF sources are already minimal; re-encoding them triples their size). It is deliberately not a random draw like the profile's banners — it is the LCP element, so it may not wait on a client-side pick.
-- The experimental notice is a static, non-dismissible alert saying the app is experimental and data may be lost. It sits after the CTA, and only on the landing.
+- The experimental notice is a static, non-dismissible alert saying the app is experimental and data may be lost. It appears on `/login` only, at the top of the page in the hidden NavBar's band — it is aimed at someone about to create an account, not at everyone who opens the landing.
 - `/app` — the timer app (auth required).
 - `/u/[username]` — public profile (no auth): username and the **focus chart** — a single minimal line of total focus time per Tehran day over a selected range (presets: last 7/30/90 days, default 7; no custom picker), zero-filled on empty days, Jalali axis labels. Only completed work sessions count; totals and breakdowns are computed from the sessions log.
 - Pointing at the chart (hover or touch drag) selects a day; a docked **day detail** panel below the chart (never a floating tooltip) shows that day's per-category rows sorted largest first, each with a progress bar sized as its share of the day's total. Defaults to the most recent day with data.

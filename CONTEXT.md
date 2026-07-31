@@ -13,7 +13,7 @@ _Avoid_: handle, slug, display name (removed concept), email (removed concept â€
 ### Pages
 
 **Landing**:
-The public root page anyone (signed-in or not) sees, in order: the hero, the app name with its one-line pitch and the way in, the experimental notice, the personal note (`landing.sub`), and the live feed. Nothing on it is behind auth.
+The public root page anyone (signed-in or not) sees, in order: the hero, the one-line pitch and the way in, the personal note (`landing.sub`), and the live feed. Nothing on it is behind auth.
 _Avoid_: home, welcome page
 
 **Hero**:
@@ -21,7 +21,7 @@ The image band that opens the Landing: one fixed picture from `public/banners`, 
 _Avoid_: banner (that is the profile's per-day art), splash, masthead
 
 **Experimental notice**:
-The standing warning that the app is experimental and may lose data. Static and not dismissible. It appears twice, on both screens where someone is deciding whether to sign up: on the Landing after the CTA, so it qualifies the offer rather than opening the page, and on the login page below the button. Never in the [[Timer app]], which is meant to be free of chrome.
+The standing warning that the app is experimental and may lose data. Static and not dismissible. It lives on the login page alone, in the band the hidden [[NavBar]] would occupy â€” aimed at the moment an account is about to exist, rather than at everyone who opens the [[Landing]]. Never in the [[Timer app]], which is meant to be free of chrome.
 _Avoid_: warning banner, disclaimer, toast
 
 **Timer app**:

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { TriangleAlert } from "lucide-react";
 // A fixed image rather than a draw from lib/banners like the profile does: a
 // random pick would either pop in on the client or vary per request, and the
 // hero is the first thing painted.
@@ -9,7 +8,6 @@ import { TriangleAlert } from "lucide-react";
 // intrinsic width/height and no blurDataURL — which is why the image is sized
 // by its wrapper below instead of by the import.
 import hero from "@/public/main.avif";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Feed } from "@/components/feed";
 import { LandingCta } from "@/components/landing-cta";
 import { copy } from "@/lib/copy";
@@ -56,14 +54,6 @@ export function Landing() {
           </p>
           <LandingCta />
         </section>
-
-        {/* After the CTA, not before it: the caveat qualifies the offer rather
-            than being the first thing anyone reads about the app. */}
-        <Alert>
-          <TriangleAlert />
-          <AlertTitle>{copy.landing.experimentalTitle}</AlertTitle>
-          <AlertDescription>{copy.landing.experimental}</AlertDescription>
-        </Alert>
 
         <p className="text-xs leading-7 text-muted-foreground sm:text-sm sm:leading-8">
           {copy.landing.sub}
