@@ -4,7 +4,7 @@ import { useConvexAuth } from "convex/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Scan } from "lucide-react";
+import { Scan, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/lib/copy";
@@ -84,23 +84,31 @@ export function NavBar() {
       <Link href="/" aria-label={copy.app.name}>
         <Logo />
       </Link>
-      {/* The badge sits inline-start of the CTA, so it materialises into empty
-          space rather than pushing the CTA off the frame edge. */}
+      {/* The timer always links to the app; a running session swaps the
+          label for the live countdown. The badge sits inline-start of the
+          CTA, so it materialises into empty space rather than pushing the
+          CTA off the frame edge. */}
       <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-        {remainingMs !== null && (
-          <Button asChild size="sm" variant="outline">
-            <Link
-              href="/app"
-              className="font-mono tabular-nums hover:text-foreground"
-              dir="ltr"
-            >
-              <div className="w-10 flex justify-start">
-                {faClock(remainingMs)}
-              </div>
-              <Scan size={15} className="text-rose-500 animate-pulse" />
-            </Link>
-          </Button>
-        )}
+        <Button asChild size="sm" variant="outline">
+          <Link href="/app" className="hover:text-foreground">
+            {remainingMs !== null ? (
+              <>
+                <span
+                  className="w-10 flex justify-start font-mono tabular-nums"
+                  dir="ltr"
+                >
+                  {faClock(remainingMs)}
+                </span>
+                <Scan size={15} className="text-rose-500 animate-pulse" />
+              </>
+            ) : (
+              <>
+                <Timer size={15} />
+                {copy.header.timer}
+              </>
+            )}
+          </Link>
+        </Button>
         {/* Signed in but the username hasn't arrived yet is still "loading":
             guessing here is what used to flash the wrong CTA. It falls back
             to the timer once auth has settled, so a device that can't reach

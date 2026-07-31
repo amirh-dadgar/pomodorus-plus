@@ -14,6 +14,9 @@ import { Feed } from "@/components/feed";
 import { LandingCta } from "@/components/landing-cta";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { copy } from "@/lib/copy";
+import { cn } from "@/lib/utils";
+
+const REPO_URL = "https://github.com/yazdanctx/pomodorus";
 
 export function Landing() {
   return (
@@ -53,7 +56,18 @@ export function Landing() {
           <p className="text-center text-sm md:text-lg  sm:text-base">
             {copy.landing.pitch}
           </p>
-          <LandingCta />
+          <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+            <LandingCta />
+            <Link
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 w-40")}
+            >
+              <FaGithub className="size-5" />
+              {copy.landing.github}
+            </Link>
+          </div>
         </section>
 
         <div className="h-0.5 bg-linear-to-r from-transparent via-border to-transparent" />
