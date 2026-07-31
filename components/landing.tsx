@@ -22,7 +22,7 @@ export function Landing() {
           what the app is below the fold. The wrapper owns the box, so the
           space is reserved before the image has loaded or been measured. */}
       <div className="relative aspect-video w-full shrink-0 mt-5">
-        <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t from-background to-transparent" />
+        <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t via-background/20 from-background to-transparent" />
         <Image
           src={hero}
           alt=""
