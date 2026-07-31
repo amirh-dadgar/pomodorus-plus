@@ -8,8 +8,11 @@ import Image from "next/image";
 // intrinsic width/height and no blurDataURL — which is why the image is sized
 // by its wrapper below instead of by the import.
 import hero from "@/public/main.avif";
+import Link from "next/link";
+import { FaGithub } from "react-icons/fa6";
 import { Feed } from "@/components/feed";
 import { LandingCta } from "@/components/landing-cta";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { copy } from "@/lib/copy";
 
 export function Landing() {
@@ -46,14 +49,14 @@ export function Landing() {
       </div>
 
       <div className="flex flex-col gap-8 px-6 sm:gap-10">
-        {/* No second heading here: the tagline lives in the hero, and the page
-            gets one h1, printed once. */}
         <section className="flex flex-col items-center gap-4">
-          <p className="text-center text-sm text-muted-foreground sm:text-base">
+          <p className="text-center text-sm md:text-lg  sm:text-base">
             {copy.landing.pitch}
           </p>
           <LandingCta />
         </section>
+
+        <div className="h-0.5 bg-linear-to-r from-transparent via-border to-transparent" />
 
         <p className="text-xs leading-7 text-muted-foreground sm:text-sm sm:leading-8">
           {copy.landing.sub}

@@ -10,7 +10,7 @@ import { copy } from "@/lib/copy";
 // on the page, so it waits for the auth state rather than guessing: rendering
 // «لاگین کن» to a signed-in visitor and then swapping it is worse than a beat
 // of grey.
-const CTA_BOX = "h-11 w-40";
+const CTA_BOX = "h-11 w-40 mt-2";
 
 export function LandingCta() {
   const { isAuthenticated, isLoading } = useConvexAuth();
