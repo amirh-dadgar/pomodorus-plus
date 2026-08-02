@@ -69,15 +69,17 @@ export default function LoginPage() {
           <KeyRound />
           <AlertTitle>{copy.login.basicAuthTitle}</AlertTitle>
           <AlertDescription>
-            {copy.login.basicAuth}{" "}
+            {/* The handle itself is nothing to read, so the sentence carries
+                the link on the word instead and splits around it. */}
+            {copy.login.basicAuthLead}{" "}
             <a
               href="https://t.me/antimatter0x1"
               target="_blank"
               rel="noopener noreferrer"
-              dir="ltr"
             >
-              {copy.login.telegramHandle}
-            </a>
+              {copy.login.telegram}
+            </a>{" "}
+            {copy.login.basicAuthTail}
           </AlertDescription>
         </Alert>
       </div>
