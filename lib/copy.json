@@ -21,7 +21,10 @@
     "backHome": "برگرد به صفحه اصلی",
     "password": "پسورد",
     "go": "بزن بریم",
-    "badCredentials": "پسوردت اشتباهه :("
+    "badCredentials": "پسوردت اشتباهه :(",
+    "basicAuthTitle": "لاگینش خیلی سادست",
+    "basicAuth": "فقط یوزرنیم و پسورد — ریست پسورد نداریم. اگه از حسابت جا موندی، تو تلگرام پیام بده:",
+    "telegramHandle": "@antimatter0x1"
   },
   "header": {
     "timer": "تایمر",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConvexError } from "convex/values";
 import Link from "next/link";
-import { ArrowRight, Loader2, TriangleAlert } from "lucide-react";
+import { ArrowRight, KeyRound, Loader2, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,13 +51,33 @@ export default function LoginPage() {
       {/* The NavBar is hidden on this route, so the notice takes its band:
           full width of the content frame at the top, on the NavBar's px-6,
           rather than sitting in the narrow form column. */}
-      <div className="shrink-0 px-6 py-4">
+      <div className="shrink-0 space-y-2 px-6 py-4">
         <Alert>
           <TriangleAlert />
           <AlertTitle>{copy.landing.experimentalTitle}</AlertTitle>
           <AlertDescription>
             {copy.landing.experimental}
             <p>{copy.landing.experimentalVibes}</p>
+          </AlertDescription>
+        </Alert>
+        {/* Sign-in is username + password and nothing else — no email on the
+            account, so a forgotten password can only be sorted out by hand.
+            Said here rather than next to the password field because it is the
+            answer to "what happens if I lose this", not a hint for filling it
+            in. */}
+        <Alert>
+          <KeyRound />
+          <AlertTitle>{copy.login.basicAuthTitle}</AlertTitle>
+          <AlertDescription>
+            {copy.login.basicAuth}{" "}
+            <a
+              href="https://t.me/antimatter0x1"
+              target="_blank"
+              rel="noopener noreferrer"
+              dir="ltr"
+            >
+              {copy.login.telegramHandle}
+            </a>
           </AlertDescription>
         </Alert>
       </div>
