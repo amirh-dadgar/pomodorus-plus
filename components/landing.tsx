@@ -79,7 +79,7 @@ export function Landing() {
           {copy.landing.sub}
         </p>
 
-        {/* <Feed /> */}
+        <Feed />
       </div>
     </main>
   );
