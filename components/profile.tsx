@@ -1,8 +1,11 @@
 "use client";
 
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogOut } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { DayCard } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
@@ -45,6 +48,33 @@ function ChartAreaSkeleton() {
   );
 }
 
+// Signing out lives here because the profile is the only page a signed-in
+// visitor has of their own; the nav bar is shared with signed-out visitors.
+function SignOutButton() {
+  const { signOut } = useAuthActions();
+  const router = useRouter();
+
+  return (
+    <div className="mt-16 flex justify-center pb-4">
+      <Button
+        size="sm"
+        variant="outline"
+        className="text-muted-foreground"
+        onClick={async () => {
+          // A failed sign-out still means leaving: the session it could not
+          // clear is the server's problem, not something to strand the
+          // visitor on their own profile over.
+          await signOut().catch(() => {});
+          router.push("/");
+        }}
+      >
+        <LogOut />
+        {copy.header.signOut}
+      </Button>
+    </div>
+  );
+}
+
 export function Profile({
   username,
   banners,
@@ -63,6 +93,10 @@ export function Profile({
   const [cached, setCached] = useState<ChartPayload | undefined>(undefined);
   if (live !== undefined && live !== cached) setCached(live);
   const view = focusHistory({ live, cached, hovered });
+
+  // Someone else's profile is a public page — only its owner gets the button.
+  const isOwner =
+    view.state !== "loading" && view.state !== "notFound" && view.isOwner;
 
   return (
     <main className="flex flex-1 flex-col p-6">
@@ -144,6 +178,8 @@ export function Profile({
           )}
         </div>
       )}
+
+      {isOwner && <SignOutButton />}
     </main>
   );
 }
