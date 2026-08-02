@@ -62,7 +62,10 @@ export function Landing() {
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 w-40")}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-11 w-40",
+              )}
             >
               <FaGithub className="size-5" />
               {copy.landing.github}
@@ -76,7 +79,7 @@ export function Landing() {
           {copy.landing.sub}
         </p>
 
-        <Feed />
+        {/* <Feed /> */}
       </div>
     </main>
   );
