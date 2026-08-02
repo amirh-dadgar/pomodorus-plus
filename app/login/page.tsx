@@ -35,12 +35,14 @@ export default function LoginPage() {
       router.push("/app");
     } catch (e) {
       // The server states its own case in Persian for everything it can
-      // name; anything else is a network or deployment problem, and the
-      // wrong-password line is the likeliest reading of a bare failure.
+      // name — including a wrong password. Anything else is a network or
+      // deployment problem, and must not be dressed up as a credentials
+      // failure: reading a version skew as "wrong password" is what once sent
+      // everyone hunting for a password they had typed correctly.
       setError(
         e instanceof ConvexError && typeof e.data === "string"
           ? e.data
-          : copy.login.badCredentials,
+          : copy.login.serverError,
       );
       setPending(false);
     }
