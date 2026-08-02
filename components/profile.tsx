@@ -6,8 +6,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LogOut } from "lucide-react";
+import Image from "next/image";
 import { api } from "@/convex/_generated/api";
-import { DayCard } from "@/components/day-card";
+import { DayCard, useBanner } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +45,48 @@ function ChartAreaSkeleton() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A range with no focus time in it. Given a picture and room to breathe rather
+ * than a line of grey text, so a quiet week reads as a page in its own right —
+ * which for a new account is the first thing the profile ever shows.
+ *
+ * Keyed on the profile alone, so switching Range doesn't reshuffle the art the
+ * way it would if the range were part of the key.
+ */
+function EmptyRange({
+  username,
+  banners,
+}: {
+  username: string;
+  banners: string[];
+}) {
+  const src = useBanner(banners, `${username}:empty`);
+
+  return (
+    <div className="mt-6 flex flex-col items-center gap-6 border p-12 text-center sm:p-20">
+      {/* The same fade the day card puts over its image: the picture rises out
+          of the page instead of sitting in a box on it. */}
+      <div className="relative aspect-square w-36 shrink-0 overflow-hidden sm:w-44">
+        <div className="absolute inset-0 z-10 bg-linear-to-t from-background via-background/20 to-transparent" />
+        {src !== null && (
+          <Image
+            src={src}
+            alt=""
+            fill
+            sizes="11rem"
+            // Hand-optimised AVIF already; see the day card.
+            unoptimized
+            className="object-cover"
+          />
+        )}
+      </div>
+      <p className="text-base font-bold sm:text-lg">
+        {copy.profile.emptyTitle}
+      </p>
     </div>
   );
 }
@@ -138,9 +181,7 @@ export function Profile({
           {view.state === "reloading" ? (
             <ChartAreaSkeleton />
           ) : view.state === "empty" ? (
-            <p className="mt-6 text-sm text-muted-foreground">
-              {copy.profile.empty}
-            </p>
+            <EmptyRange username={view.username} banners={banners} />
           ) : (
             <>
               <div className="mt-4">

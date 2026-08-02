@@ -18,14 +18,14 @@ function sliceLabel(slice: FocusSlice): string {
 const noSubscribe = () => () => {};
 
 /**
- * The image for one day, from the visit's banner assignment.
+ * The image for `key`, from the visit's banner assignment.
  *
  * The draw has to happen on the client — a cached server render would hand
  * every visitor the same sequence — so it goes through useSyncExternalStore:
  * null while rendering on the server and during hydration, the assigned image
  * immediately after.
  */
-function useDayBanner(banners: string[], key: string): string | null {
+export function useBanner(banners: string[], key: string): string | null {
   const getSnapshot = useCallback(() => bannerFor(banners, key), [banners, key]);
   return useSyncExternalStore(noSubscribe, getSnapshot, () => null);
 }
@@ -60,7 +60,7 @@ export function DayCard({
   usePreloadedBanners(banners);
   // Keyed by user, so navigating between two profiles doesn't hand them the
   // same sequence of images.
-  const src = useDayBanner(banners, `${username}:${day.dayKey}`);
+  const src = useBanner(banners, `${username}:${day.dayKey}`);
 
   // No rule above the card: the gap alone separates it from the chart.
   return (
