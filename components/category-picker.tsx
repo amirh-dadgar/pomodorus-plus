@@ -22,6 +22,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -48,6 +49,14 @@ export function CategoryPicker({
 
   const selectedCategory =
     categories.find((c) => c.clientId === selected) ?? null;
+
+  // With no categories the picker view is an empty combobox with a lone
+  // "new category" row, so it's replaced by the create form. Deriving this
+  // rather than setting the view on open also covers deleting the last
+  // category from the edit view.
+  const isEmpty = categories.length === 0;
+  const showCreate =
+    view.name === "create" || (isEmpty && view.name === "picker");
 
   const backToPicker = () => setView({ name: "picker" });
 
@@ -87,7 +96,7 @@ export function CategoryPicker({
             </>
           ) : (
             <span className="text-muted-foreground">
-              {copy.categories.pick}
+              {isEmpty ? copy.categories.firstTitle : copy.categories.pick}
             </span>
           )}
         </span>
@@ -108,7 +117,7 @@ export function CategoryPicker({
             150px of usable width, so the phone gets the ordinary dialog inset
             and only the wider frame gets the airy version. */}
         <DialogContent className="p-6 sm:max-w-lg sm:p-20">
-          {view.name === "picker" && (
+          {!showCreate && view.name === "picker" && (
             <>
               <DialogHeader>
                 <DialogTitle>{copy.categories.pick}</DialogTitle>
@@ -193,16 +202,15 @@ export function CategoryPicker({
             </>
           )}
 
-          {view.name === "create" && (
-            <div>
-              <CreateView
-                onBack={backToPicker}
-                onCreated={(id) => {
-                  onSelect(id);
-                  closeAndReset();
-                }}
-              />
-            </div>
+          {showCreate && (
+            <CreateView
+              firstRun={isEmpty}
+              onDismiss={isEmpty ? closeAndReset : backToPicker}
+              onCreated={(id) => {
+                onSelect(id);
+                closeAndReset();
+              }}
+            />
           )}
 
           {view.name === "edit" && (
@@ -238,10 +246,12 @@ function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
 }
 
 function CreateView({
-  onBack,
+  firstRun,
+  onDismiss,
   onCreated,
 }: {
-  onBack: () => void;
+  firstRun: boolean;
+  onDismiss: () => void;
   onCreated: (id: string) => void;
 }) {
   const [name, setName] = useState("");
@@ -254,7 +264,15 @@ function CreateView({
 
   return (
     <div className="flex flex-col gap-2">
-      <BackHeader title={copy.categories.new} onBack={onBack} />
+      {/* First run has no picker behind it, so there's nowhere to go back to. */}
+      {firstRun ? (
+        <DialogHeader>
+          <DialogTitle>{copy.categories.firstTitle}</DialogTitle>
+          <DialogDescription>{copy.categories.firstHint}</DialogDescription>
+        </DialogHeader>
+      ) : (
+        <BackHeader title={copy.categories.new} onBack={onDismiss} />
+      )}
       <div className="flex flex-col gap-4">
         <Input
           autoFocus
@@ -279,7 +297,7 @@ function CreateView({
           <Button size="sm" onClick={handleCreate} disabled={!name.trim()}>
             {copy.categories.add}
           </Button>
-          <Button size="sm" variant="ghost" onClick={onBack}>
+          <Button size="sm" variant="ghost" onClick={onDismiss}>
             {copy.categories.cancel}
           </Button>
         </div>
