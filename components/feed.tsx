@@ -42,14 +42,14 @@ export function Feed() {
               key={entry.id}
               className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
             >
-              <span className="truncate">
+              <span dir="rtl" className="flex min-w-0 items-center gap-1.5">
                 <Link
                   href={`/u/${entry.username}`}
-                  className="font-medium hover:underline"
+                  className="min-w-0 truncate font-medium hover:underline [font-family:ui-sans-serif,system-ui,sans-serif]"
                 >
                   {enDigits(entry.username)}
                 </Link>
-                <span className="text-muted-foreground">
+                <span className="min-w-0 truncate text-muted-foreground">
                   {" — "}
                   {isBreak
                     ? copy.feed.onBreak
