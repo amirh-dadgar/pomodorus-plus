@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { copy } from "@/lib/copy";
-import { faClock } from "@/lib/format";
+import { faClock, enDigits } from "@/lib/format";
 import { useOnline } from "@/lib/local/hooks";
 import { isLive } from "@/lib/presence";
 
@@ -47,7 +47,7 @@ export function Feed() {
                   href={`/u/${entry.username}`}
                   className="font-medium hover:underline"
                 >
-                  {entry.username}
+                  {enDigits(entry.username)}
                 </Link>
                 <span className="text-muted-foreground">
                   {" — "}

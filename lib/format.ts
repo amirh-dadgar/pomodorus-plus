@@ -5,6 +5,11 @@ export function faDigits(value: string | number): string {
   return String(value).replace(/[0-9]/g, (d) => FA_DIGITS[Number(d)]);
 }
 
+/** Convert Persian digits to English digits. */
+export function enDigits(value: string): string {
+  return value.replace(/[۰-۹]/g, (d) => String(FA_DIGITS.indexOf(d)));
+}
+
 /** mm:ss countdown with Persian digits, e.g. ۲۴:۰۵ */
 export function faClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
