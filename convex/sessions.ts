@@ -88,7 +88,11 @@ export const activeFeed = query({
         durationMs: p.durationMs,
       });
     }
-    feed.sort((a, b) => a.startedAt - b.startedAt);
+    feed.sort((a, b) => {
+      if (a.username === "yazdanctx" && b.username !== "yazdanctx") return -1;
+      if (b.username === "yazdanctx" && a.username !== "yazdanctx") return 1;
+      return a.startedAt - b.startedAt;
+    });
     return feed;
   },
 });
