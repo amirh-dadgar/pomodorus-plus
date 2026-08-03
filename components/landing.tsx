@@ -51,7 +51,7 @@ export function Landing() {
         />
       </div>
 
-      <div className="flex flex-col gap-8 px-6 sm:gap-10">
+      <div className="flex flex-col gap-8 px-6 pb-10 sm:gap-10">
         <section className="flex flex-col items-center gap-4">
           <p className="text-center text-sm md:text-lg  sm:text-base">
             {copy.landing.pitch}
