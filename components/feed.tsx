@@ -29,7 +29,7 @@ export function Feed() {
   if (!online || active.length === 0) return null;
 
   return (
-    <section className="w-full rounded-none border border-border bg-card">
+    <section className="w-full rounded-none border border-border bg-card pb-10">
       <ul className="divide-y divide-border">
         {active.map((entry) => {
           const remainingMs = Math.min(
