@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   apply,
   breakAfterRing,
+  claimOrphaned,
   effectiveCategories,
   normalizeServerCategories,
   type Command,
@@ -605,7 +606,7 @@ test("refreshing the server mirror with identical rows changes nothing", () => {
 
 // ---- Sync bookkeeping ----
 
-test("marking synced clears exactly what was delivered", () => {
+test("marking synced clears exactly what the server acknowledged", () => {
   const state: LocalState = {
     ...EMPTY_STATE,
     pendingSessions: [
@@ -620,11 +621,11 @@ test("marking synced clears exactly what was delivered", () => {
   };
   const { state: next } = at(T0 + 10, state, {
     type: "markSynced",
-    sessions: [state.pendingSessions[0]],
-    ops: [
-      state.pendingCategoryOps[0],
+    sessionIds: ["s1"],
+    opKeys: [
+      "a:" + T0,
       // The version of "b" that was actually pushed, not the one queued since.
-      { clientId: "b", op: "upsert", name: "دو", isPublic: true, at: T0 },
+      "b:" + T0,
     ],
   });
   assert.deepEqual(
@@ -635,6 +636,70 @@ test("marking synced clears exactly what was delivered", () => {
     next.pendingCategoryOps.map((o) => o.at),
     [T0 + 5],
   );
+});
+
+// The bug this protocol exists to stop: `sync.push` drops what it cannot
+// store, so a device that cleared everything it *sent* erased the session for
+// good. A clock five minutes fast was enough to lose every pomodoro a user
+// ever ran.
+test("a pushed but unacknowledged session keeps its place in the queue", () => {
+  const state: LocalState = {
+    ...EMPTY_STATE,
+    pendingSessions: [
+      { clientId: "stored", startedAt: T0, durationMs: 25 * MINUTE_MS, endedAt: T0 + 1 },
+      { clientId: "refused", startedAt: T0, durationMs: 25 * MINUTE_MS, endedAt: T0 + 2 },
+    ],
+  };
+  // The push carried both; the server acknowledged one.
+  const { state: next } = at(T0 + 10, state, {
+    type: "markSynced",
+    sessionIds: ["stored"],
+    opKeys: [],
+  });
+  assert.deepEqual(
+    next.pendingSessions.map((s) => s.clientId),
+    ["refused"],
+  );
+});
+
+// ---- Claiming work done before the username arrived ----
+
+test("an account with no state of its own adopts the orphaned blob whole", () => {
+  const orphaned: LocalState = {
+    ...working(),
+    pendingSessions: [
+      { clientId: "s1", startedAt: T0, durationMs: 25 * MINUTE_MS, endedAt: T0 + 1 },
+    ],
+  };
+  // Including the running session: the user is watching it count down.
+  assert.equal(claimOrphaned(null, orphaned), orphaned);
+});
+
+test("claiming merges the queues without disturbing the account's own timer", () => {
+  const existing: LocalState = {
+    ...working(),
+    pendingSessions: [
+      { clientId: "mine", startedAt: T0, durationMs: 25 * MINUTE_MS, endedAt: T0 + 1 },
+    ],
+    pendingCategoryOps: [{ clientId: "a", op: "upsert", name: "یک", isPublic: true, at: T0 }],
+  };
+  const orphaned: LocalState = {
+    ...EMPTY_STATE,
+    running: null,
+    pendingSessions: [
+      // Already known — the same session, written under both keys.
+      { clientId: "mine", startedAt: T0, durationMs: 25 * MINUTE_MS, endedAt: T0 + 1 },
+      { clientId: "orphan", startedAt: T0, durationMs: 50 * MINUTE_MS, endedAt: T0 + 2 },
+    ],
+    pendingCategoryOps: [{ clientId: "a", op: "upsert", name: "یک", isPublic: true, at: T0 }],
+  };
+  const merged = claimOrphaned(existing, orphaned);
+  assert.deepEqual(
+    merged.pendingSessions.map((s) => s.clientId),
+    ["mine", "orphan"],
+  );
+  assert.equal(merged.pendingCategoryOps.length, 1);
+  assert.equal(merged.running, existing.running);
 });
 
 // ---- Reading the category cache ----

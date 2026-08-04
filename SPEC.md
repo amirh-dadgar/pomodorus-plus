@@ -127,6 +127,8 @@ See `docs/adr/0003-profanity-wordlist.md` for the wordlist's provenance and why 
 - Offline scope: `/app` is fully functional (timer, categories, own history from local data). `/` loads from cache with the feed replaced by an offline notice. `/u/[username]` is online-only; offline it shows a friendly offline page.
 - Offline requires having signed in at least once on the device; first-ever visit offline shows a "need internet to sign in" screen. An expired auth token never blocks the timer — unsynced data is held and syncs right after re-login.
 - Sync is fully automatic on reconnect: completed sessions append to history, category changes apply last-write-wins. No sync buttons or dialogs; the only UI is a subtle indicator (casual Persian copy) when offline or holding unsynced data.
+- **A device clears a queued item only when `sync.push` acknowledges it by id** (`docs/adr/0006-acknowledged-sync.md`), never merely because the push succeeded. Anything the server cannot store *yet* — a session dated ahead of its clock, a backlog past the per-push cap — stays queued and goes again; only items that can never be stored are dropped. Retries are safe because sessions dedupe on their client-minted `clientId`.
+- **Focus time earned before the username arrives is not lost.** State is keyed by username, which comes from a server query, so a first load — or any load where that query never lands — writes to an anonymous blob that the first account to sign in claims. Storage that refuses a write (quota, private mode) is retried on the next tick rather than throwing, and every write re-reads the blob first so two open tabs cannot overwrite each other's queue.
 
 ## Dev fast mode
 

@@ -45,7 +45,8 @@ export type Command =
   | { type: "updateCategory"; clientId: string; name: string; isPublic: boolean }
   | { type: "deleteCategory"; clientId: string }
   | { type: "setServerCategories"; rows: readonly unknown[] }
-  | { type: "markSynced"; sessions: readonly PendingSession[]; ops: readonly CategoryOp[] };
+  /** Drop the queued items the server acknowledged, and only those. */
+  | { type: "markSynced"; sessionIds: readonly string[]; opKeys: readonly string[] };
 
 /** What the rules need from the world: the clock, and fresh client-minted ids. */
 export type Env = { now: number; newId: () => string };
@@ -226,9 +227,12 @@ export function apply(state: LocalState, command: Command, env: Env): Applied {
     }
 
     case "markSynced": {
-      // Clear exactly what the push delivered; edits made since then survive.
-      const sessionIds = new Set(command.sessions.map((x) => x.clientId));
-      const opKeys = new Set(command.ops.map((o) => `${o.clientId}:${o.at}`));
+      // Clear exactly what the server acknowledged — never merely what was
+      // sent. An item the push carried but the ack omits was not stored, so it
+      // stays queued and goes again; edits made since the push survive either
+      // way, because an op is keyed by its own timestamp.
+      const sessionIds = new Set(command.sessionIds);
+      const opKeys = new Set(command.opKeys);
       return {
         state: {
           ...s,
@@ -240,6 +244,36 @@ export function apply(state: LocalState, command: Command, env: Env): Applied {
       };
     }
   }
+}
+
+/**
+ * Fold the state a device wrote before it knew whose device it was into the
+ * state of the account that turned out to own it (`./store`).
+ *
+ * With nothing stored for that account, the orphan simply *is* its state —
+ * including a session still running, which the user is very likely watching
+ * count down right now. Otherwise only the queues merge, deduped by the same
+ * identities sync uses: the account's own timer is the live one, but unsynced
+ * work is unsynced work whoever wrote it.
+ */
+export function claimOrphaned(
+  existing: LocalState | null,
+  orphaned: LocalState,
+): LocalState {
+  if (existing === null) return orphaned;
+  const sessionIds = new Set(existing.pendingSessions.map((s) => s.clientId));
+  const opKeys = new Set(existing.pendingCategoryOps.map((o) => `${o.clientId}:${o.at}`));
+  return {
+    ...existing,
+    pendingSessions: [
+      ...existing.pendingSessions,
+      ...orphaned.pendingSessions.filter((s) => !sessionIds.has(s.clientId)),
+    ],
+    pendingCategoryOps: [
+      ...existing.pendingCategoryOps,
+      ...orphaned.pendingCategoryOps.filter((o) => !opKeys.has(`${o.clientId}:${o.at}`)),
+    ],
+  };
 }
 
 /**

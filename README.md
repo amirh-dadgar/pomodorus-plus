@@ -77,6 +77,8 @@ Sign in with a username (`[a-z0-9_]{3,20}`) and a password. There is no separate
 
 There is no test-watch script; `npx tsx --test tests/some.test.ts` runs one file.
 
+Convex functions are tested for real against an in-memory backend (`convex-test`), not mocked — see `tests/sync-push.test.ts`. That needs ESM, which is why `tests/` and `convex/` each carry a one-line `package.json` marking them `"type": "module"`: the repo root is CommonJS, and `@convex-dev/auth/server` publishes no `require` export, so without those markers `tsx` resolves `convex/sync.ts` through the CJS loader and the import fails. Convex itself already builds these files as ESM, so the markers only tell Node what the bundler assumed all along.
+
 ## Dev fast mode
 
 In dev builds every session finishes after **3 seconds** while being recorded at its full nominal duration, so you can exercise a whole 4-session cycle in under a minute. `sync.push` drops these unless `DEV_FAST_POMODORO` is set on the deployment:
