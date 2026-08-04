@@ -3,14 +3,7 @@
 import { useState } from "react";
 import { Minus, Plus, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { copy, t } from "@/lib/copy";
 import { faDigits } from "@/lib/format";
 import { useLocalState } from "@/lib/local/hooks";
@@ -41,7 +34,7 @@ function IntervalRow({
     // taller than its neighbours is the whole inconsistency. Stacked, every
     // interval is the same block — one line of label over one control row of
     // fixed width — however the copy changes.
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex  items-center justify-between gap-2">
       <span className="text-sm text-muted-foreground">{label}</span>
       <div className="flex items-center gap-2" dir="ltr">
         <Button
@@ -101,13 +94,6 @@ export function SettingsDialog() {
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{copy.timer.settingsTitle}</DialogTitle>
-          <DialogDescription>{copy.timer.settingsNote}</DialogDescription>
-        </DialogHeader>
-        {/* One gap between every interval, and the same gap inside each one's
-            label-to-control step is deliberately smaller, so the three read as
-            three groups rather than six loose lines. */}
         <div className="flex flex-col gap-6">
           <IntervalRow
             settingKey="shortBreak"
@@ -127,13 +113,6 @@ export function SettingsDialog() {
             value={settings[RANGE_FIELD.perCycle]}
             format={count}
           />
-        </div>
-        {/* Inline rather than a DialogFooter bar: the category picker is the
-            reference dialog in this app and it closes with a plain button. */}
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => setOpen(false)}>
-            {copy.timer.settingsDone}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
