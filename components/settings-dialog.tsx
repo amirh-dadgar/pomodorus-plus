@@ -36,9 +36,14 @@ function IntervalRow({
   const down = stepValue(settingKey, value, -1);
   const up = stepValue(settingKey, value, 1);
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="min-w-0 text-sm">{label}</span>
-      <div className="flex shrink-0 items-center gap-2" dir="ltr">
+    // Label above rather than beside the control: the labels differ in length
+    // enough that one of them wraps to a second line, and a row that is a line
+    // taller than its neighbours is the whole inconsistency. Stacked, every
+    // interval is the same block — one line of label over one control row of
+    // fixed width — however the copy changes.
+    <div className="flex flex-col items-start gap-2">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-2" dir="ltr">
         <Button
           variant="outline"
           size="icon"
@@ -48,7 +53,9 @@ function IntervalRow({
         >
           <Minus className="size-4" />
         </Button>
-        <span className="w-24 text-center font-mono text-sm tabular-nums">
+        {/* Fixed width so «۵ دقیقه» and «۲۰ دقیقه» do not shift the buttons,
+            and so all three controls are exactly as wide as each other. */}
+        <span className="w-24 text-center font-mono tabular-nums">
           {format(value)}
         </span>
         <Button
@@ -98,7 +105,10 @@ export function SettingsDialog() {
           <DialogTitle>{copy.timer.settingsTitle}</DialogTitle>
           <DialogDescription>{copy.timer.settingsNote}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+        {/* One gap between every interval, and the same gap inside each one's
+            label-to-control step is deliberately smaller, so the three read as
+            three groups rather than six loose lines. */}
+        <div className="flex flex-col gap-6">
           <IntervalRow
             settingKey="shortBreak"
             label={copy.timer.settingsShortBreak}
