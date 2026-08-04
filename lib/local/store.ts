@@ -7,7 +7,13 @@
 // outlive an expired auth token. Tabs stay consistent via the `storage` event.
 
 import { apply, type Applied, type Command } from "./device";
-import { type CategoryOp, type LocalState, type PendingSession, EMPTY_STATE } from "./types";
+import {
+  type CategoryOp,
+  type LocalState,
+  type PendingSession,
+  type RangeKey,
+  EMPTY_STATE,
+} from "./types";
 
 const IDENTITY_KEY = "pomodorus:user";
 const stateKey = (username: string) => `pomodorus:v1:${username}`;
@@ -113,8 +119,32 @@ export function tick() {
   dispatch({ type: "settle" });
 }
 
-export function startWork(categoryClientId: string, minutes: number, fast: boolean) {
-  dispatch({ type: "startWork", categoryClientId, minutes, fast });
+/** Start a work session on the selected task, at the configured length. */
+export function startWork(fast: boolean) {
+  dispatch({ type: "startWork", fast });
+}
+
+/** Remember the picked task, so a reload doesn't lose it. */
+export function selectCategory(clientId: string | null) {
+  dispatch({ type: "selectCategory", clientId });
+}
+
+/** Move one interval to a new value on its range. */
+export function setSetting(key: RangeKey, value: number) {
+  dispatch({ type: "setSetting", key, value });
+}
+
+/**
+ * Acknowledge the ringing session: silences the alarm, and starts whatever
+ * break survived the ring.
+ */
+export function confirm() {
+  dispatch({ type: "confirm" });
+}
+
+/** Acknowledge a ringing break and go straight back into work on the same task. */
+export function continueWork(fast: boolean) {
+  dispatch({ type: "continueWork", fast });
 }
 
 /** Cancel the running work session. It counts for nothing. */

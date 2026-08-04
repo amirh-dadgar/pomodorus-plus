@@ -34,17 +34,42 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 
 See `docs/adr/0001-local-first-timer.md` for why this replaced the original server-authoritative model.
 
-- The device that runs a session owns it: `startedAt` + `duration` live in local storage; start, countdown, completion, break auto-start, and cycle counting are all local and work fully offline.
-- Sessions survive refresh/tab close. If the app is closed when the end time passes, the session is finalized retroactively on next launch.
+- The device that runs a session owns it: `startedAt` + `duration` live in local storage; start, countdown, completion, ringing, breaks, and cycle counting are all local and work fully offline.
+- Sessions survive refresh/tab close. If the app is closed when the end time passes, the session is finalized retroactively on next launch — and, having no one to announce itself to at the time, comes back ringing silently.
 - Convex is a log, not the source of truth: completed work sessions are appended to history on sync, whenever the device is next online.
-- Work durations: **25 or 55 minutes**, stepped through on the start screen with a − / + pair either side of the clock; the button for the end you are already on is disabled. No settings page.
+- Work durations: **15–60 minutes in 5-minute steps**, default **25**, stepped on the start screen with a − / + pair either side of the clock; the button for an end you have reached is disabled. The picked task and the chosen length are persisted, so a reload does not lose them.
 - The start screen also shows **today's focus**: the current Tehran day's completed session count and total, read from the server. Signed-out, loading and offline all show a blank row of the same height; only a server-confirmed total may say the day is empty. See `docs/adr/0002-todays-focus-from-the-server.md`.
 - A running session shows a flat progress bar of elapsed share beneath the clock, measured against the real end time (so a dev fast session fills over its 3 seconds).
-- Short break: **5 min** after each completed session. Long break: **20 min** after every 4th completed session.
-- Breaks auto-start when a work session completes, and are skippable.
-- No pause. Controls are: start, cancel (work), skip (break).
-- Cancel voids the session: no history credit, cycle counter unchanged.
-- Cycle counter: increments per completed work session; resets to 0 after the long break (taken or skipped) and after **1 hour of idleness** (no running session/break). Tracked locally.
+- No pause. Controls are: start, cancel (work), skip (break), and confirm (ringing).
+- Cancel voids the session: no history credit, cycle counter unchanged. It is only available while work is *running* — a ringing session is already complete and cannot be retracted.
+- Cycle counter: increments per completed work session; resets to 0 after the long break (taken or skipped) and after **1 hour of idleness**. Idleness is measured from a session's nominal end, never from when it was confirmed, so a long ring counts as the idleness it was. Tracked locally.
+
+## Confirmed transitions
+
+See `docs/adr/0004-confirmed-transitions.md`.
+
+- **Nothing advances on its own.** A session that reaches its end enters **ringing** and stops there: no break auto-starts, no chain runs. However long the app was closed, at most one transition is ever due.
+- A ringing session **alarms every 3 seconds, unbounded**, until confirmed. One system notification per ring, fired once with `requireInteraction` so it stays on screen — never re-fired on the ding cadence.
+- **Ring time is not focus time.** A work session is credited at its exact nominal end, at its full nominal duration, and syncs from there without waiting to be acknowledged. Today's focus therefore ticks up at the bell. Confirming in two seconds or two hours produces identical history.
+- **Ring time comes out of the break.** The break is anchored at the nominal end: confirm after 10s and it is `5:00 − 0:10`; ring past the whole break and there is none left, so confirming drops straight to idle.
+- **Only an explicit tap confirms.** Tab focus, app resume, notification clicks and mouse movement do not.
+- Confirming work starts the surviving break in one tap. Confirming a break offers two: **continue** (straight back into the same task at the same length) and **done** (back to the start screen, task and length still picked).
+- **Audibility is decided once, when the ring is born.** Within a minute of the bell → audible until confirmed, however long that takes. Later → silent for good, visual only. Never re-judged, so an ordinary ring never gives up and a ring from yesterday never sounds.
+- The alarm is **global**: a headless component in the root layout, so it reaches every route. Dings are scheduled on the WebAudio clock rather than `setInterval`, since hidden tabs clamp timers to about one callback a minute.
+- Known limit: **a page reload silences a live alarm until the next interaction** — the AudioContext dies with the document and browsers require a gesture. The first pointer or key event anywhere re-unlocks it. The ring screen and the NavBar badge therefore carry the message without sound.
+- Presence expires at the nominal end, so a ringing user leaves the feed at the bell. The NavBar badge instead **stays through the ring**, counting up rather than down, filled and belled so the inversion reads at a glance.
+
+## Intervals
+
+See `docs/adr/0005-device-local-intervals.md`.
+
+- Four configurable intervals, defaulting to the classic technique: work **25**, short break **5**, long break **20**, long break every **4th** pomodoro.
+- Ranges: work 15–60 by 5, short break 3–15, long break 10–35 by 5, pomodoros-per-cycle 2–6. The bands keep the app near the technique; within them it can be configured into something that is not it.
+- `RANGES.work.max` is coupled to `MAX_SESSION_MS` in `lib/presence.ts` (60 min). Raise one without the other and the feed silently drops the session.
+- **Device-local, never synced.** The device owns the timer (ADR 0001) and these durations are the timer; a phone and a laptop may legitimately disagree.
+- The work length lives on the start screen, where it is a per-session decision. The breaks and cycle length live in a dialog opened from it — the app does have a settings surface now, but a deliberately quiet one.
+- **A session carries the break lengths in force when it started**, so editing settings mid-session or mid-ring cannot change the break it hands you. Pomodoros-per-cycle is the exception: it describes the cycle, is read at completion, and applies immediately.
+- Breaks remain skippable while running.
 - No one-running-session-per-user rule: completed sessions from every device all count, with no dedup. A two-device user can double-count focus time; accepted.
 
 ## Categories
@@ -102,13 +127,14 @@ See `docs/adr/0003-profanity-wordlist.md` for the wordlist's provenance and why 
 
 ## Dev fast mode
 
-- Dev builds run every session as a 3-second test session: credited as its full nominal duration (`devFast: true`), but finished locally after 3s. Its auto-breaks also run in 3s while stored at nominal duration. The sync mutation drops `devFast` sessions unless the `DEV_FAST_POMODORO` env var is set on the Convex deployment, so production never credits them.
+- Dev builds run every session as a 3-second test session: credited as its full nominal duration (`devFast: true`), but finished locally after 3s. Its breaks also run in 3s while stored at nominal duration. The sync mutation drops `devFast` sessions unless the `DEV_FAST_POMODORO` env var is set on the Convex deployment, so production never credits them.
+- A fast session rings like any other, and owes its **full nominal** break — so the ring-time deduction is measured against minutes that never really elapsed, and the "the ring ate the break" path cannot be reached in fast mode without waiting out the real break length.
 
 ## Notifications
 
 - Notification permission requested when the user starts a session (browsers require a user gesture for the prompt).
-- System notification plus a short WebAudio chime (no audio asset) when a work session or break ends; live countdown in the tab title.
-- Ends are detected from local session completion (the timer is local-first), so they fire offline too, including for dev fast sessions. Cancels and skipped breaks don't notify.
+- One system notification per ring, fired once with `requireInteraction` so it stays on screen until dismissed, plus the repeating WebAudio alarm (no audio asset). The tab title carries the live countdown, and the ring time once the bell has gone.
+- Ends are detected from local session completion (the timer is local-first), so they fire offline too, including for dev fast sessions. Cancels and skipped breaks don't notify, and neither does a ring born stale.
 - Known limit (no push server): notifications only fire while the app is open in some tab or installed window (background OK, fully closed no).
 
 ## Environment

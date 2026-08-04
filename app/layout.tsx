@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
+import { Alarm } from "@/components/alarm";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { NavBar } from "@/components/nav-bar";
 import { SwRegister } from "@/components/sw-register";
@@ -88,6 +89,8 @@ export default function RootLayout({
         <body className="min-h-screen flex flex-col lg:bg-stone-950">
           <ConvexClientProvider>
             <SyncEngine />
+            {/* Above the route: a ring must reach you wherever you are. */}
+            <Alarm />
             <SwRegister />
             <div className="mx-auto overflow-x-hidden flex min-h-screen w-full max-w-xl flex-col border-x-0 bg-background lg:border-x lg:border-border/50">
               <NavBar />

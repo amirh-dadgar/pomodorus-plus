@@ -4,7 +4,7 @@ import { useConvexAuth } from "convex/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Scan, Timer } from "lucide-react";
+import { BellRing, Scan, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/lib/copy";
@@ -75,6 +75,7 @@ export function NavBar() {
   if (HIDE_ON.includes(pathname)) return null;
 
   const running = state.running;
+  const ringing = state.ringing;
   const remainingMs = running ? Math.max(0, endAt(running) - now) : null;
 
   return (
@@ -87,11 +88,36 @@ export function NavBar() {
       {/* The timer always links to the app; a running session swaps the
           label for the live countdown. The badge sits inline-start of the
           CTA, so it materialises into empty space rather than pushing the
-          CTA off the frame edge. */}
+          CTA off the frame edge.
+
+          A ringing session keeps the badge rather than losing it — that is
+          the moment you most need a way back in, and an alarm you cannot
+          hear (a reload suspends audio) may be the only thing showing. It
+          counts *up*, which is the opposite of what this badge otherwise
+          means, so it is filled and belled rather than outlined and scanned:
+          the inversion has to be legible at a glance, not just in the
+          digits. */}
       <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button asChild size="sm" variant="outline">
-          <Link href="/app" className="hover:text-foreground">
-            {remainingMs !== null ? (
+        <Button
+          asChild
+          size="sm"
+          variant={ringing ? "default" : "outline"}
+          className={ringing ? "animate-pulse" : undefined}
+        >
+          {/* The filled variant already sets its own foreground; forcing
+              `text-foreground` on it would be white on white. */}
+          <Link href="/app" className={ringing ? undefined : "hover:text-foreground"}>
+            {ringing ? (
+              <>
+                <span
+                  className="w-10 flex justify-start font-mono tabular-nums"
+                  dir="ltr"
+                >
+                  +{faClock(now - ringing.endedAt)}
+                </span>
+                <BellRing size={15} />
+              </>
+            ) : remainingMs !== null ? (
               <>
                 <span
                   className="w-10 flex justify-start font-mono tabular-nums"

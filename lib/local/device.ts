@@ -5,28 +5,40 @@
 // say. They live here, pure, with the clock and id minting handed in, so all of
 // them can be exercised as data. `./store` is the one adapter that binds them to
 // localStorage, `Date.now` and `crypto.randomUUID`.
+//
+// Nothing here advances on its own past the end of a session
+// (docs/adr/0004-confirmed-transitions.md): sessions end into `ringing` and
+// stay there until a human confirms.
 
 import copy from "../copy.json";
 import { isProfane } from "../profanity";
 import {
+  type BreakKind,
   type Category,
   type CategoryOp,
   type LocalState,
   type PendingSession,
+  type RangeKey,
   type ServerCategory,
+  type Settings,
+  AUDIBLE_WINDOW_MS,
   IDLE_RESET_MS,
-  LONG_BREAK_MS,
   MINUTE_MS,
-  SESSIONS_PER_CYCLE,
-  SHORT_BREAK_MS,
-  WORK_MINUTES,
+  RANGE_FIELD,
   endAt,
+  inRange,
 } from "./types";
 
 export type Command =
   /** Finalize whatever is already over. Every other command does this first. */
   | { type: "settle" }
-  | { type: "startWork"; categoryClientId: string; minutes: number; fast: boolean }
+  | { type: "selectCategory"; clientId: string | null }
+  | { type: "setSetting"; key: RangeKey; value: number }
+  | { type: "startWork"; fast: boolean }
+  /** Acknowledge the ringing session. The only thing that ends a ring. */
+  | { type: "confirm" }
+  /** Acknowledge a ringing break and go straight back to work on the same task. */
+  | { type: "continueWork"; fast: boolean }
   | { type: "cancelWork" }
   | { type: "skipBreak" }
   | { type: "createCategory"; name: string; isPublic: boolean }
@@ -54,36 +66,80 @@ export type Applied = {
  * (the buttons that would cause them are disabled), but a refused name is not.
  */
 export function apply(state: LocalState, command: Command, env: Env): Applied {
-  // A session whose end time has passed has already completed, whatever the
-  // user is asking for now — so every command sees a settled state.
+  // A session whose end time has passed is already over, whatever the user is
+  // asking for now — so every command sees a settled state.
   const s = settled(state, env);
 
   switch (command.type) {
     case "settle":
       return { state: s };
 
-    case "startWork": {
-      if (!isWorkDuration(command.minutes)) {
+    case "selectCategory":
+      if (s.selectedCategoryId === command.clientId) return { state: s };
+      return { state: { ...s, selectedCategoryId: command.clientId } };
+
+    case "setSetting": {
+      if (!inRange(command.key, command.value)) {
         return { state: s, rejected: copy.errors.badDuration };
       }
+      const field = RANGE_FIELD[command.key];
+      if (s.settings[field] === command.value) return { state: s };
+      return { state: { ...s, settings: { ...s.settings, [field]: command.value } } };
+    }
+
+    case "startWork": {
       if (s.running) return { state: s, rejected: copy.errors.alreadyRunning };
-      // An hour with nothing running abandons the cycle: four sessions spread
-      // across a day were never one cycle. It is checked on the way into a new
-      // session rather than on a timer, because nothing observes it in between.
-      const idle = s.cycleCount > 0 && env.now - s.lastActivityAt > IDLE_RESET_MS;
+      if (s.ringing) return { state: s, rejected: copy.errors.confirmFirst };
+      if (s.selectedCategoryId === null) {
+        return { state: s, rejected: copy.errors.categoryNotFound };
+      }
+      return { state: begin(s, s.selectedCategoryId, command.fast, env) };
+    }
+
+    case "confirm": {
+      const ring = s.ringing;
+      if (!ring) return { state: s, rejected: copy.errors.nothingRinging };
+      // Ring time was rest, so it is spent out of the break rather than added
+      // to it. Ring past the whole break and there is nothing left to take.
+      if (ring.owedBreak !== null) {
+        const remaining = ring.owedBreak.durationMs - (env.now - ring.endedAt);
+        if (remaining > 0) {
+          return {
+            state: {
+              ...s,
+              ringing: null,
+              running: {
+                id: env.newId(),
+                kind: ring.owedBreak.kind,
+                categoryClientId: null,
+                startedAt: env.now,
+                durationMs: remaining,
+                ...(ring.devFast ? { devFast: true } : {}),
+              },
+            },
+          };
+        }
+      }
+      // `lastActivityAt` is deliberately left where the bell put it: a long
+      // ring is idleness, and the cycle's 1h reset must be able to see it.
+      return { state: { ...s, ringing: null } };
+    }
+
+    case "continueWork": {
+      const ring = s.ringing;
+      if (!ring || ring.kind === "work") {
+        return { state: s, rejected: copy.errors.noRingingBreak };
+      }
+      if (s.selectedCategoryId === null) {
+        return { state: s, rejected: copy.errors.categoryNotFound };
+      }
       return {
-        state: {
-          ...s,
-          ...(idle ? { cycleCount: 0 } : {}),
-          running: {
-            id: env.newId(),
-            kind: "work",
-            categoryClientId: command.categoryClientId,
-            startedAt: env.now,
-            durationMs: command.minutes * MINUTE_MS,
-            ...(command.fast ? { devFast: true } : {}),
-          },
-        },
+        state: begin(
+          { ...s, ringing: null },
+          s.selectedCategoryId,
+          command.fast,
+          env,
+        ),
       };
     }
 
@@ -91,7 +147,9 @@ export function apply(state: LocalState, command: Command, env: Env): Applied {
       if (!s.running || s.running.kind !== "work") {
         return { state: s, rejected: copy.errors.nothingRunning };
       }
-      // Voided: no history credit, and the cycle counter is left alone.
+      // Voided: no history credit, and the cycle counter is left alone. There
+      // is no equivalent once a session is ringing — by then it is already
+      // complete, credited, and quite possibly synced.
       return { state: { ...s, running: null } };
 
     case "skipBreak":
@@ -143,13 +201,20 @@ export function apply(state: LocalState, command: Command, env: Env): Applied {
       };
     }
 
-    case "deleteCategory":
+    case "deleteCategory": {
       if (isRunningOn(s, command.clientId)) {
         return { state: s, rejected: copy.errors.categoryBusy };
       }
+      const next = queueOp(s, { clientId: command.clientId, op: "delete", at: env.now });
+      // A deleted category cannot stay selected, or the start button would be
+      // enabled for a task that no longer exists.
       return {
-        state: queueOp(s, { clientId: command.clientId, op: "delete", at: env.now }),
+        state:
+          next.selectedCategoryId === command.clientId
+            ? { ...next, selectedCategoryId: null }
+            : next,
       };
+    }
 
     case "setServerCategories": {
       const serverCategories = normalizeServerCategories(command.rows);
@@ -178,61 +243,135 @@ export function apply(state: LocalState, command: Command, env: Env): Applied {
 }
 
 /**
- * Finalize everything whose end time has passed — including whole chains that
- * elapsed while the app was closed: work completes retroactively at its exact
- * end time, its break auto-starts from that moment, and the break may itself
- * already be over.
+ * Start a work session on `categoryClientId`, at the configured length.
+ *
+ * The break lengths ride along on the session: the numbers on screen when you
+ * press start govern this whole pomodoro, so editing settings while it runs —
+ * or while it rings — cannot change the break it hands you.
+ */
+function begin(
+  s: LocalState,
+  categoryClientId: string,
+  fast: boolean,
+  env: Env,
+): LocalState {
+  // An hour with nothing running abandons the cycle: four sessions spread
+  // across a day were never one cycle. It is checked on the way into a new
+  // session rather than on a timer, because nothing observes it in between.
+  const idle = s.cycleCount > 0 && env.now - s.lastActivityAt > IDLE_RESET_MS;
+  return {
+    ...s,
+    ...(idle ? { cycleCount: 0 } : {}),
+    running: {
+      id: env.newId(),
+      kind: "work",
+      categoryClientId,
+      startedAt: env.now,
+      durationMs: s.settings.workMinutes * MINUTE_MS,
+      shortBreakMs: s.settings.shortBreakMinutes * MINUTE_MS,
+      longBreakMs: s.settings.longBreakMinutes * MINUTE_MS,
+      ...(fast ? { devFast: true } : {}),
+    },
+  };
+}
+
+/**
+ * Finalize the running session if its end time has passed.
+ *
+ * A session ends into `ringing` and stops there — nothing chains, so at most
+ * one transition is ever due, however long the app was closed. A work session
+ * is credited at its full nominal duration at its exact end time, whether or
+ * not anyone was watching; the ring that follows only decides what happens to
+ * the *break*.
  *
  * Returns the same reference when nothing was due.
  */
 function settled(state: LocalState, env: Env): LocalState {
-  let s = state;
-  while (s.running && endAt(s.running) <= env.now) {
-    const running = s.running;
-    const end = endAt(running);
-    if (running.kind === "work") {
-      const completed: PendingSession = {
-        clientId: running.id,
-        ...(running.categoryClientId !== null
-          ? { categoryClientId: running.categoryClientId }
-          : {}),
-        startedAt: running.startedAt,
-        durationMs: running.durationMs,
+  const running = state.running;
+  if (!running || endAt(running) > env.now) return state;
+
+  const end = endAt(running);
+  // Decided once, here, and never revisited: within the window the app was
+  // there to hear the bell; outside it, this is a ring being discovered on a
+  // launch long afterwards.
+  const audible = env.now - end <= AUDIBLE_WINDOW_MS;
+  const devFast = running.devFast ? { devFast: true as const } : {};
+
+  if (running.kind !== "work") {
+    return {
+      ...state,
+      running: null,
+      // The cycle closes when the long break is over, not when it is confirmed.
+      cycleCount: running.kind === "longBreak" ? 0 : state.cycleCount,
+      lastActivityAt: end,
+      ringing: {
+        id: running.id,
+        kind: running.kind,
+        categoryClientId: null,
         endedAt: end,
-        ...(running.devFast ? { devFast: true } : {}),
-      };
-      const cycleCount = s.cycleCount + 1;
-      const isLong = cycleCount >= SESSIONS_PER_CYCLE;
-      s = {
-        ...s,
-        running: {
-          id: env.newId(),
-          kind: isLong ? "longBreak" : "shortBreak",
-          categoryClientId: null,
-          startedAt: end,
-          durationMs: isLong ? LONG_BREAK_MS : SHORT_BREAK_MS,
-          ...(running.devFast ? { devFast: true } : {}),
-        },
-        cycleCount,
-        lastActivityAt: end,
-        lastEnded: { id: running.id, kind: "work", at: end },
-        pendingSessions: [...s.pendingSessions, completed],
-      };
-    } else {
-      s = {
-        ...s,
-        running: null,
-        cycleCount: running.kind === "longBreak" ? 0 : s.cycleCount,
-        lastActivityAt: end,
-        lastEnded: { id: running.id, kind: running.kind, at: end },
-      };
-    }
+        owedBreak: null,
+        audible,
+        ...devFast,
+      },
+    };
   }
-  return s;
+
+  const completed: PendingSession = {
+    clientId: running.id,
+    ...(running.categoryClientId !== null
+      ? { categoryClientId: running.categoryClientId }
+      : {}),
+    startedAt: running.startedAt,
+    durationMs: running.durationMs,
+    endedAt: end,
+    ...devFast,
+  };
+  const cycleCount = state.cycleCount + 1;
+  // Pomodoros-per-cycle is the one interval that is *not* snapshotted: it
+  // describes the cycle rather than any one session, so a change applies to
+  // the very next completion.
+  const isLong = cycleCount >= state.settings.perCycle;
+  const kind: BreakKind = isLong ? "longBreak" : "shortBreak";
+  return {
+    ...state,
+    running: null,
+    cycleCount,
+    lastActivityAt: end,
+    pendingSessions: [...state.pendingSessions, completed],
+    ringing: {
+      id: running.id,
+      kind: "work",
+      categoryClientId: running.categoryClientId,
+      endedAt: end,
+      owedBreak: { kind, durationMs: owedBreakMs(running, isLong, state.settings) },
+      audible,
+      ...devFast,
+    },
+  };
 }
 
-function isWorkDuration(minutes: number): boolean {
-  return WORK_MINUTES.some((m) => m === minutes);
+/**
+ * The break this session owes. Read off the session itself, falling back to
+ * the current settings for sessions started before the lengths were carried
+ * along — a blob persisted by an older build.
+ */
+function owedBreakMs(
+  running: { shortBreakMs?: number; longBreakMs?: number },
+  isLong: boolean,
+  settings: Settings,
+): number {
+  const carried = isLong ? running.longBreakMs : running.shortBreakMs;
+  if (typeof carried === "number") return carried;
+  return (isLong ? settings.longBreakMinutes : settings.shortBreakMinutes) * MINUTE_MS;
+}
+
+/** How much of the owed break survives the ring, or 0 if the ring ate it. */
+export function breakAfterRing(
+  ring: { endedAt: number; owedBreak: { durationMs: number } | null },
+  now: number,
+): number {
+  if (ring.owedBreak === null) return 0;
+  return Math.max(0, ring.owedBreak.durationMs - (now - ring.endedAt));
 }
 
 function validName(name: string): string | null {

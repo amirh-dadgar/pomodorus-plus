@@ -1,22 +1,36 @@
 "use client";
 
 import { useConvexAuth } from "convex/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { copy, t } from "@/lib/copy";
 import { faClock, faDigits } from "@/lib/format";
-import { playDing, unlockAudio } from "@/lib/sound";
+import { unlockAudio } from "@/lib/sound";
 import { CategoryPicker } from "@/components/category-picker";
 import { OfflineIndicator } from "@/components/offline-indicator";
-import { Minus, Play, Plus, SkipForward, X } from "lucide-react";
+import { SettingsDialog } from "@/components/settings-dialog";
+import { BellRing, Minus, Play, Plus, SkipForward, X } from "lucide-react";
 import {
   useLocalIdentity,
   useLocalState,
   useTimerNow,
 } from "@/lib/local/hooks";
-import { effectiveCategories } from "@/lib/local/device";
-import { cancelWork, skipBreak, startWork } from "@/lib/local/store";
-import { WORK_MINUTES, endAt, type SessionKind } from "@/lib/local/types";
+import { breakAfterRing, effectiveCategories } from "@/lib/local/device";
+import {
+  cancelWork,
+  confirm,
+  continueWork,
+  selectCategory,
+  setSetting,
+  skipBreak,
+  startWork,
+} from "@/lib/local/store";
+import {
+  type LocalState,
+  type SessionKind,
+  endAt,
+  stepValue,
+} from "@/lib/local/types";
 
 const KIND_LABEL: Record<SessionKind, string> = {
   work: copy.timer.kindWork,
@@ -24,39 +38,121 @@ const KIND_LABEL: Record<SessionKind, string> = {
   longBreak: copy.timer.kindLongBreak,
 };
 
-type DurationChoice = (typeof WORK_MINUTES)[number];
+/** Dev builds run every session in three seconds; see SPEC «Dev fast mode». */
+const FAST = process.env.NODE_ENV === "development";
+
+/** The name to show for a work session's task, or the private-task stand-in. */
+function taskName(state: LocalState, categoryClientId: string | null): string {
+  return (
+    effectiveCategories(state).find((c) => c.clientId === categoryClientId)?.name ??
+    copy.timer.privateTask
+  );
+}
+
+/** The four-dot cycle indicator, clamped to the configured cycle length. */
+function CycleDots({ count, perCycle }: { count: number; perCycle: number }) {
+  return (
+    <div
+      className="flex gap-2"
+      title={t(copy.timer.cycleTitle, {
+        n: faDigits(count),
+        total: faDigits(perCycle),
+      })}
+    >
+      {Array.from({ length: perCycle }, (_, i) => (
+        <span
+          key={i}
+          className={`h-2 w-2 rounded-none ${i < Math.min(count, perCycle) ? "bg-foreground" : "bg-muted"}`}
+        />
+      ))}
+    </div>
+  );
+}
 
 /**
- * How much focus the server has recorded for this Tehran day.
+ * A session that has ended and is waiting to be acknowledged
+ * (docs/adr/0004-confirmed-transitions.md).
  *
- * The one part of the timer screen that isn't local-first
- * (docs/adr/0002-todays-focus-from-the-server.md), so it has three ways of
- * having no number: signed out, still loading, and offline. All three render
- * as an empty row of the same height — only a total the server actually
- * confirmed is allowed to say «امروز تمرکز نکردی کلا».
+ * The session is already over and, if it was work, already credited — nothing
+ * on this screen changes the record. What it changes is the break: the counter
+ * is ring time, and ring time comes out of the break, so a confirmation forty
+ * minutes late buys you nothing but silence.
+ *
+ * There is deliberately no cancel. A ringing pomodoro is complete, indivisible
+ * and quite possibly already synced.
  */
-// function TodayFocus() {
-//   const { isAuthenticated } = useConvexAuth();
-//   const online = useOnline();
-//   const today = useQuery(api.sessions.todayFocus, isAuthenticated ? {} : "skip");
-//
-//   return (
-//     <div className="flex h-5 items-center justify-center">
-//       {today === undefined && isAuthenticated && online ? (
-//         <Skeleton className="h-3.5 w-40 rounded-none" />
-//       ) : today ? (
-//         <p className="text-sm text-muted-foreground">
-//           {today.count === 0
-//             ? copy.timer.todayEmpty
-//             : t(copy.timer.todaySummary, {
-//                 count: faDigits(today.count),
-//                 duration: faDuration(today.totalMs),
-//               })}
-//         </p>
-//       ) : null}
-//     </div>
-//   );
-// }
+function RingScreen({ state, now }: { state: LocalState; now: number }) {
+  const ring = state.ringing;
+  if (!ring) return null;
+  const isWork = ring.kind === "work";
+  const breakLeft = breakAfterRing(ring, now);
+
+  return (
+    <section className="flex w-full flex-col items-center gap-6">
+      <p className="max-w-full truncate text-center text-muted-foreground">
+        {isWork ? taskName(state, ring.categoryClientId) : KIND_LABEL[ring.kind]}
+      </p>
+      <p className="flex items-center gap-3 text-center text-xl font-bold">
+        {/* The one animated thing in a flat, still UI — it has to read as an
+            alarm even with the sound muted or the AudioContext asleep. */}
+        <BellRing className="size-5 animate-pulse" aria-hidden />
+        {isWork ? copy.timer.ringWorkTitle : copy.timer.ringBreakTitle}
+      </p>
+      {/* Ring time, not a countdown: it counts up, and it is never focus. */}
+      <p
+        className="font-mono text-6xl font-bold tabular-nums tracking-tight sm:text-7xl"
+        dir="ltr"
+      >
+        +{faClock(now - ring.endedAt)}
+      </p>
+      <p className="max-w-xs text-center text-sm text-muted-foreground">
+        {isWork
+          ? breakLeft > 0
+            ? copy.timer.ringWorkHint
+            : copy.timer.ringWorkHintNoBreak
+          : copy.timer.ringBreakHint}
+      </p>
+      <CycleDots count={state.cycleCount} perCycle={state.settings.perCycle} />
+      {isWork ? (
+        <Button
+          size="lg"
+          className="w-56"
+          onClick={() => {
+            unlockAudio();
+            confirm();
+          }}
+        >
+          {breakLeft > 0 ? copy.timer.confirmWork : copy.timer.confirmWorkNoBreak}
+        </Button>
+      ) : (
+        // Continue / done: after a break the decision really is "another one,
+        // or stop" — that is the technique's own fork, not friction.
+        <div className="flex w-full max-w-xs flex-col gap-2">
+          <Button
+            size="lg"
+            disabled={state.selectedCategoryId === null}
+            onClick={() => {
+              unlockAudio();
+              continueWork(FAST);
+            }}
+          >
+            <Play />
+            {copy.timer.continueWork}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              unlockAudio();
+              confirm();
+            }}
+          >
+            {copy.timer.confirmBreak}
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
 
 export function TimerApp() {
   // The timer is local-first: everything below renders from the local
@@ -66,9 +162,6 @@ export function TimerApp() {
   const { isAuthenticated } = useConvexAuth();
   const now = useTimerNow();
 
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [choice, setChoice] = useState<DurationChoice>(25);
-
   // Ask for notification permission once, right after login.
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -77,46 +170,21 @@ export function TimerApp() {
   }, []);
 
   const running = state.running;
+  const ringing = state.ringing;
   const remainingMs = running ? Math.max(0, endAt(running) - now) : null;
 
-  // Live countdown in the tab title: just the clock, nothing else.
+  // Live countdown in the tab title, and ring time once the bell has gone —
+  // a muted tab still says what is happening.
   useEffect(() => {
-    document.title =
-      running && remainingMs !== null ? faClock(remainingMs) : copy.app.name;
+    document.title = ringing
+      ? `+${faClock(Date.now() - ringing.endedAt)} — ${copy.app.name}`
+      : running && remainingMs !== null
+        ? faClock(remainingMs)
+        : copy.app.name;
     return () => {
       document.title = copy.app.name;
     };
-  }, [running, remainingMs]);
-
-  // Notify + ding when a session completes. Driven by the local lastEnded
-  // (cancels and skips don't set it), so it fires offline too. Completions
-  // settled retroactively — from a period the app was closed — are stale
-  // and stay silent.
-  const lastEnded = state.lastEnded;
-  const seenEndedId = useRef<string | null | undefined>(undefined);
-  useEffect(() => {
-    if (seenEndedId.current === undefined) {
-      seenEndedId.current = lastEnded?.id ?? null;
-      return;
-    }
-    if (!lastEnded || lastEnded.id === seenEndedId.current) return;
-    seenEndedId.current = lastEnded.id;
-    if (Date.now() - lastEnded.at > 60_000) return;
-    playDing();
-    if ("Notification" in window && Notification.permission === "granted") {
-      if (lastEnded.kind === "work") {
-        new Notification(copy.notifications.workDoneTitle, {
-          body: copy.notifications.workDoneBody,
-          tag: "pomodorus",
-        });
-      } else {
-        new Notification(copy.notifications.breakDoneTitle, {
-          body: copy.notifications.breakDoneBody,
-          tag: "pomodorus",
-        });
-      }
-    }
-  }, [lastEnded]);
+  }, [running, remainingMs, ringing]);
 
   // No cached identity: either the first online visit is still loading the
   // username, or this device has never signed in and is offline.
@@ -128,23 +196,21 @@ export function TimerApp() {
     );
   }
 
-  // cycleCount stays at 4 during the long break, then resets to 0.
-  const cycleDots = Array.from(
-    { length: 4 },
-    (_, i) => i < Math.min(state.cycleCount, 4),
-  );
+  const { workMinutes } = state.settings;
+  const down = stepValue("work", workMinutes, -1);
+  const up = stepValue("work", workMinutes, 1);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6">
-      {running && remainingMs !== null ? (
+      {ringing ? (
+        <RingScreen state={state} now={now} />
+      ) : running && remainingMs !== null ? (
         <section className="flex w-full flex-col items-center gap-6">
           {/* A 40-character category name has no spaces to break on, so it is
               clipped rather than allowed to widen the column. */}
           <p className="max-w-full truncate text-center text-muted-foreground">
             {running.kind === "work"
-              ? (effectiveCategories(state).find(
-                  (c) => c.clientId === running.categoryClientId,
-                )?.name ?? copy.timer.privateTask)
+              ? taskName(state, running.categoryClientId)
               : KIND_LABEL[running.kind]}
           </p>
           <p
@@ -172,32 +238,16 @@ export function TimerApp() {
               }}
             />
           </div>
-          <div
-            className="flex gap-2"
-            title={t(copy.timer.cycleTitle, { n: faDigits(state.cycleCount) })}
-          >
-            {cycleDots.map((filled, i) => (
-              <span
-                key={i}
-                className={`h-2 w-2 rounded-none ${filled ? "bg-foreground" : "bg-muted"}`}
-              />
-            ))}
-          </div>
+          <CycleDots count={state.cycleCount} perCycle={state.settings.perCycle} />
           {running.kind === "work" ? (
-            <Button
-              variant="ghost"
-              onClick={cancelWork}
-            >
+            <Button variant="ghost" onClick={cancelWork}>
               <div className="flex items-center gap-1">
                 <X size={10} />
                 {copy.timer.cancelWork}
               </div>
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              onClick={skipBreak}
-            >
+            <Button variant="outline" onClick={skipBreak}>
               <SkipForward />
               {copy.timer.skipBreak}
             </Button>
@@ -205,32 +255,37 @@ export function TimerApp() {
         </section>
       ) : (
         <div className="grid w-full min-w-0">
-          <CategoryPicker selected={categoryId} onSelect={setCategoryId} />
+          {/* Both the picked task and the chosen length live in the persisted
+              local state, not in React — a reload must not lose your place. */}
+          <CategoryPicker
+            selected={state.selectedCategoryId}
+            onSelect={selectCategory}
+          />
 
           {/* The padding is the phone constraint here, not the type: at the
               desktop px-10 the ±/clock row alone is wider than a 360px frame. */}
           <section className="flex w-full min-w-0 flex-col items-center gap-6 border border-t-0 px-3 py-12 sm:px-10 sm:py-20">
-            {/* The clock is the control: ± steps between the two durations,
-                and the button for the end you are already on is disabled. */}
+            {/* The clock is the control: ± walks the pomodoro length along its
+                range, and the button for an end you have reached is disabled. */}
             <div className="flex items-center gap-2 sm:gap-4" dir="ltr">
               <Button
                 variant="outline"
                 size="icon"
-                aria-label={t(copy.timer.minutes, { m: faDigits(25) })}
-                disabled={choice === 25}
-                onClick={() => setChoice(25)}
+                aria-label={t(copy.timer.minutes, { m: faDigits(down ?? workMinutes) })}
+                disabled={down === null}
+                onClick={() => down !== null && setSetting("work", down)}
               >
                 <Minus className="size-4" />
               </Button>
               <p className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-7xl">
-                {faClock(choice * 60_000)}
+                {faClock(workMinutes * 60_000)}
               </p>
               <Button
                 variant="outline"
                 size="icon"
-                aria-label={t(copy.timer.minutes, { m: faDigits(55) })}
-                disabled={choice === 55}
-                onClick={() => setChoice(55)}
+                aria-label={t(copy.timer.minutes, { m: faDigits(up ?? workMinutes) })}
+                disabled={up === null}
+                onClick={() => up !== null && setSetting("work", up)}
               >
                 <Plus className="size-4" />
               </Button>
@@ -238,7 +293,7 @@ export function TimerApp() {
             <Button
               size="lg"
               className="w-40"
-              disabled={categoryId === null}
+              disabled={state.selectedCategoryId === null}
               onClick={() => {
                 // User gesture: the only moment browsers reliably allow the
                 // permission prompt and unlocking audio playback.
@@ -249,19 +304,13 @@ export function TimerApp() {
                 ) {
                   Notification.requestPermission();
                 }
-                if (categoryId !== null) {
-                  startWork(
-                    categoryId,
-                    choice,
-                    process.env.NODE_ENV === "development",
-                  );
-                }
+                startWork(FAST);
               }}
             >
               <Play />
               {copy.timer.start}
             </Button>
-            {/* TodayFocus — the today's-total label — is commented out for now. */}
+            <SettingsDialog />
           </section>
         </div>
       )}

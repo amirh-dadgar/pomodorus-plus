@@ -5,8 +5,6 @@ import copy from "../lib/copy.json";
 import { SWEEP_GRACE_MS, accept, isLive, isShowable, visibleLabel } from "../lib/presence";
 import { tehranDayKey } from "./days";
 
-export const WORK_MINUTES = [25, 55] as const;
-
 async function requireUserId(ctx: MutationCtx) {
   const userId = await getAuthUserId(ctx);
   if (userId === null) throw new ConvexError(copy.errors.signInFirst);

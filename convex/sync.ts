@@ -4,7 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import copy from "../lib/copy.json";
 import { isProfane } from "../lib/profanity";
-import { WORK_MINUTES } from "./sessions";
+import { isWorkDurationMs } from "../lib/local/types";
 
 const MINUTE_MS = 60_000;
 const CLOCK_SKEW_MS = 5 * MINUTE_MS;
@@ -127,7 +127,11 @@ export const push = mutation({
         .withIndex("by_user_client", (q) => q.eq("userId", userId).eq("clientId", s.clientId))
         .unique();
       if (dupe) continue;
-      if (!WORK_MINUTES.some((m) => m * MINUTE_MS === s.durationMs)) continue;
+      // The device decides the intervals (ADR 0005), so this can only check
+      // the range they are drawn from — the pending queue is editable
+      // localStorage, and a hand-edited 10-hour "pomodoro" must not be
+      // credited.
+      if (!isWorkDurationMs(s.durationMs)) continue;
       if (!Number.isFinite(s.startedAt) || !Number.isFinite(s.endedAt)) continue;
       if (s.endedAt > now + CLOCK_SKEW_MS) continue; // no future-dated credit
       if (s.devFast) {
