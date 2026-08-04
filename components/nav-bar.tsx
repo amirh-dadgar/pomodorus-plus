@@ -94,19 +94,17 @@ export function NavBar() {
           the moment you most need a way back in, and an alarm you cannot
           hear (a reload suspends audio) may be the only thing showing. It
           counts *up*, which is the opposite of what this badge otherwise
-          means, so it is filled and belled rather than outlined and scanned:
+          means, so it goes red and belled rather than outlined and scanned:
           the inversion has to be legible at a glance, not just in the
           digits. */}
       <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button
-          asChild
-          size="sm"
-          variant={ringing ? "default" : "outline"}
-          className={ringing ? "animate-pulse" : undefined}
-        >
-          {/* The filled variant already sets its own foreground; forcing
-              `text-foreground` on it would be white on white. */}
-          <Link href="/app" className={ringing ? undefined : "hover:text-foreground"}>
+        <Button asChild size="sm" variant="outline">
+          <Link
+            href="/app"
+            className={
+              ringing ? "text-rose-500 animate-pulse" : "hover:text-foreground"
+            }
+          >
             {ringing ? (
               <>
                 <span

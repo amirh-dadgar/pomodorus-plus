@@ -147,10 +147,7 @@ export function CategoryPicker({
           }
         }}
       >
-        {/* p-20 is 5rem a side: on a 360px phone that leaves the picker about
-            150px of usable width, so the phone gets the ordinary dialog inset
-            and only the wider frame gets the airy version. */}
-        <DialogContent className="p-6 sm:max-w-lg sm:p-20">
+        <DialogContent>
           {!showCreate && view.name === "picker" && (
             <>
               <DialogHeader>

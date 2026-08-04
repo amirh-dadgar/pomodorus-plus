@@ -21,6 +21,9 @@ A very minimal Persian-language pomodoro app with a realtime global activity fee
 - App name: **Pomodorus**.
 - **No layout shift from auth or data resolving.** Controls that depend on unresolved state reserve their exact final box rather than rendering nothing — the NavBar CTA, the landing CTA and today's focus. Reserving space is not guessing content: the placeholder never predicts which label wins, so shift is removed without reintroducing a flash of the wrong CTA.
 - The theme is monochrome, so nothing can be flagged by hue: `--destructive` is the same grey as `--muted-foreground`. Errors separate themselves by being full white, iconned and boxed instead.
+- **One exception, and only one: a ringing timer is red.** The ring clock and the NavBar badge take `rose-500` because a clock that has stopped meaning "time left" and started counting up has to be unmistakable across a room. Nothing else in the app is allowed a hue — errors included.
+- No emoji in user-facing copy for the timer or its alerts; anything the user must actually read goes in the bordered, iconned alert box the login page and the category picker already use.
+- All dialogs share one inset — `p-6`, widening to `sm:p-20` and `sm:max-w-lg` on anything above a phone — set on `DialogContent` rather than per dialog, so there is one place it can drift from.
 
 ## Auth page
 

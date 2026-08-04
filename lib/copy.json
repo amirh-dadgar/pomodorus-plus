@@ -44,7 +44,7 @@
     "cancelWork": "بی‌خیالش، کنسل",
     "skipBreak": "چیل بسه، بریم پای کار",
     "cycleTitle": "{n} از {total} تا",
-    "ringWorkTitle": "پومودورو تموم شد! 🍅",
+    "ringWorkTitle": "پومودورو تموم شد!",
     "ringWorkHint": "حساب شد و رفت تو کارنامه‌ات. بزن تایید تا چیلت شروع شه",
     "ringWorkHintNoBreak": "حساب شد و رفت تو کارنامه‌ات. انقد طول کشید که چیلتم همین‌جا خوردی",
     "ringBreakTitle": "چیل تموم شد",
@@ -111,7 +111,7 @@
     "pageCta": "برو تایمر بزن"
   },
   "notifications": {
-    "workDoneTitle": "تموم شد! 🎉",
+    "workDoneTitle": "تموم شد!",
     "workDoneBody": "برگرد تاییدش کن تا چیلت شروع شه",
     "breakDoneTitle": "چیل تموم شد",
     "breakDoneBody": "برگرد تا بریم یکی دیگه"

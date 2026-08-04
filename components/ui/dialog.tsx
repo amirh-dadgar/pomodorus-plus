@@ -61,7 +61,12 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 start-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 gap-4 rounded-none bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // The airy inset every dialog in the app shares. p-20 is 5rem a
+          // side: on a 360px phone that would leave about 150px of usable
+          // width, so the phone gets the ordinary inset and only the wider
+          // frame gets the airy version — which is also why the box widens to
+          // max-w-lg, since sm:max-w-sm would spend most of itself on padding.
+          "fixed top-1/2 start-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 gap-4 rounded-none bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-lg sm:p-20 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
@@ -107,7 +112,10 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-none border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        // Bled back out to the edge of the content box, so these have to
+        // track DialogContent's padding exactly — horizontally only, since a
+        // 5rem-tall footer bar would dwarf what it sits under.
+        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-none border-t bg-muted/50 px-6 py-4 sm:-mx-20 sm:-mb-20 sm:flex-row sm:justify-end sm:px-20",
         className
       )}
       {...props}

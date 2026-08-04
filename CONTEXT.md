@@ -63,7 +63,7 @@ One timed run — work or break — with a nominal duration. Owned by the device
 _Avoid_: server-authoritative session (the old model)
 
 **Ringing**:
-The state a session is in between its nominal end and the user's [[Confirmation]]. A session ends into ringing and stops there — nothing advances on its own (`docs/adr/0004-confirmed-transitions.md`). The session itself is already over and, if it was work, already credited and syncing; ringing changes nothing about the record. Whether a ring makes a sound is decided once, when it is born, and never revisited: born within a minute of the bell it is audible until confirmed however long that takes, born later it is a ring discovered on a launch long afterwards and is silent for good.
+The state a session is in between its nominal end and the user's [[Confirmation]]. The one state the app renders in a hue: the clock counts up in red, and what it wants from the user is set in the same bordered, iconned alert box as every other message worth reading. A session ends into ringing and stops there — nothing advances on its own (`docs/adr/0004-confirmed-transitions.md`). The session itself is already over and, if it was work, already credited and syncing; ringing changes nothing about the record. Whether a ring makes a sound is decided once, when it is born, and never revisited: born within a minute of the bell it is audible until confirmed however long that takes, born later it is a ring discovered on a launch long afterwards and is silent for good.
 _Avoid_: overtime, extra time, overrun (all imply the session is still running), snooze, alarm state
 
 **Ring time**:
@@ -118,7 +118,7 @@ A box of a control's exact final size, held while the state that decides the con
 _Avoid_: loading state, spinner, fallback
 
 **Timer badge**:
-A clickable indicator in the NavBar showing the remaining time of a running session (e.g. `۱۸:۴۲`). Navigates to `/app` on tap. Positioned near the CTA in the nav. Visible while a session is active and through a [[Ringing]] one, where it counts *up* instead of down — that is the moment a way back into the app matters most, and a reload can leave the alarm mute, so the badge may be the only thing saying so. Because its meaning is inverted there it is filled and belled rather than outlined, since the inversion has to read at a glance and not only in the digits.
+A clickable indicator in the NavBar showing the remaining time of a running session (e.g. `۱۸:۴۲`). Navigates to `/app` on tap. Positioned near the CTA in the nav. Visible while a session is active and through a [[Ringing]] one, where it counts *up* instead of down — that is the moment a way back into the app matters most, and a reload can leave the alarm mute, so the badge may be the only thing saying so. Because its meaning is inverted there it turns red and belled rather than outlined, since the inversion has to read at a glance and not only in the digits.
 _Avoid_: timer indicator, countdown badge
 
 **Alarm**:

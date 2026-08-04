@@ -2,6 +2,7 @@
 
 import { useConvexAuth } from "convex/react";
 import { useEffect } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { copy, t } from "@/lib/copy";
 import { faClock, faDigits } from "@/lib/format";
@@ -92,26 +93,31 @@ function RingScreen({ state, now }: { state: LocalState; now: number }) {
       <p className="max-w-full truncate text-center text-muted-foreground">
         {isWork ? taskName(state, ring.categoryClientId) : KIND_LABEL[ring.kind]}
       </p>
-      <p className="flex items-center gap-3 text-center text-xl font-bold">
-        {/* The one animated thing in a flat, still UI — it has to read as an
-            alarm even with the sound muted or the AudioContext asleep. */}
-        <BellRing className="size-5 animate-pulse" aria-hidden />
-        {isWork ? copy.timer.ringWorkTitle : copy.timer.ringBreakTitle}
-      </p>
-      {/* Ring time, not a countdown: it counts up, and it is never focus. */}
+      {/* Ring time, not a countdown: it counts up, and it is never focus.
+          Red is the one hue the app allows itself, and this is what it is
+          for — a clock that has stopped meaning "time left" has to be
+          unmistakable from across a room. */}
       <p
-        className="font-mono text-6xl font-bold tabular-nums tracking-tight sm:text-7xl"
+        className="font-mono text-6xl font-bold tabular-nums tracking-tight text-rose-500 sm:text-7xl"
         dir="ltr"
       >
         +{faClock(now - ring.endedAt)}
       </p>
-      <p className="max-w-xs text-center text-sm text-muted-foreground">
-        {isWork
-          ? breakLeft > 0
-            ? copy.timer.ringWorkHint
-            : copy.timer.ringWorkHintNoBreak
-          : copy.timer.ringBreakHint}
-      </p>
+      {/* The same bordered, iconned alert the login page and the picker use
+          for anything the user has to actually read. */}
+      <Alert className="max-w-xs text-foreground">
+        <BellRing className="animate-pulse" />
+        <AlertTitle>
+          {isWork ? copy.timer.ringWorkTitle : copy.timer.ringBreakTitle}
+        </AlertTitle>
+        <AlertDescription>
+          {isWork
+            ? breakLeft > 0
+              ? copy.timer.ringWorkHint
+              : copy.timer.ringWorkHintNoBreak
+            : copy.timer.ringBreakHint}
+        </AlertDescription>
+      </Alert>
       <CycleDots count={state.cycleCount} perCycle={state.settings.perCycle} />
       {isWork ? (
         <Button

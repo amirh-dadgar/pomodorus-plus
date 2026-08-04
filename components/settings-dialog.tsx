@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -94,12 +93,12 @@ export function SettingsDialog() {
           {copy.timer.settings}
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-none">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{copy.timer.settingsTitle}</DialogTitle>
           <DialogDescription>{copy.timer.settingsNote}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4 py-2">
+        <div className="flex flex-col gap-4">
           <IntervalRow
             settingKey="shortBreak"
             label={copy.timer.settingsShortBreak}
@@ -119,11 +118,13 @@ export function SettingsDialog() {
             format={count}
           />
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+        {/* Inline rather than a DialogFooter bar: the category picker is the
+            reference dialog in this app and it closes with a plain button. */}
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => setOpen(false)}>
             {copy.timer.settingsDone}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
