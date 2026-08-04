@@ -662,6 +662,30 @@ test("a pushed but unacknowledged session keeps its place in the queue", () => {
   );
 });
 
+// An ack that frees nothing must hand the same state back. The sync engine
+// re-runs whenever the queue's identity changes, so an equal-but-new array
+// here becomes push, ack nothing, push again — a loop clocked by the server.
+test("an acknowledgement that clears nothing returns the same state", () => {
+  const state: LocalState = {
+    ...EMPTY_STATE,
+    pendingSessions: [
+      { clientId: "deferred", startedAt: T0, durationMs: 25 * MINUTE_MS, endedAt: T0 + 1 },
+    ],
+    pendingCategoryOps: [{ clientId: "a", op: "upsert", name: "یک", isPublic: true, at: T0 }],
+  };
+  // The server stored none of it — a clock running fast, say.
+  const empty = at(T0 + 10, state, { type: "markSynced", sessionIds: [], opKeys: [] });
+  assert.equal(empty.state, state);
+
+  // Also when the ack names things the queue no longer holds.
+  const stale = at(T0 + 10, state, {
+    type: "markSynced",
+    sessionIds: ["already-gone"],
+    opKeys: ["b:" + T0],
+  });
+  assert.equal(stale.state, state);
+});
+
 // ---- Claiming work done before the username arrived ----
 
 test("an account with no state of its own adopts the orphaned blob whole", () => {

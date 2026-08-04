@@ -233,15 +233,22 @@ export function apply(state: LocalState, command: Command, env: Env): Applied {
       // way, because an op is keyed by its own timestamp.
       const sessionIds = new Set(command.sessionIds);
       const opKeys = new Set(command.opKeys);
-      return {
-        state: {
-          ...s,
-          pendingSessions: s.pendingSessions.filter((x) => !sessionIds.has(x.clientId)),
-          pendingCategoryOps: s.pendingCategoryOps.filter(
-            (o) => !opKeys.has(`${o.clientId}:${o.at}`),
-          ),
-        },
-      };
+      const pendingSessions = s.pendingSessions.filter((x) => !sessionIds.has(x.clientId));
+      const pendingCategoryOps = s.pendingCategoryOps.filter(
+        (o) => !opKeys.has(`${o.clientId}:${o.at}`),
+      );
+      // The same reference back when the ack cleared nothing we still held,
+      // and not merely as an optimization: the sync engine re-runs whenever
+      // the queue's identity changes, so handing back an equal-but-new array
+      // after an empty ack would push, ack nothing, push again — a loop with
+      // the server as its clock. An ack that frees nothing must be a no-op.
+      if (
+        pendingSessions.length === s.pendingSessions.length &&
+        pendingCategoryOps.length === s.pendingCategoryOps.length
+      ) {
+        return { state: s };
+      }
+      return { state: { ...s, pendingSessions, pendingCategoryOps } };
     }
   }
 }

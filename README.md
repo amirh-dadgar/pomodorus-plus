@@ -77,7 +77,13 @@ Sign in with a username (`[a-z0-9_]{3,20}`) and a password. There is no separate
 
 There is no test-watch script; `npx tsx --test tests/some.test.ts` runs one file.
 
-Convex functions are tested for real against an in-memory backend (`convex-test`), not mocked — see `tests/sync-push.test.ts`. That needs ESM, which is why `tests/` and `convex/` each carry a one-line `package.json` marking them `"type": "module"`: the repo root is CommonJS, and `@convex-dev/auth/server` publishes no `require` export, so without those markers `tsx` resolves `convex/sync.ts` through the CJS loader and the import fails. Convex itself already builds these files as ESM, so the markers only tell Node what the bundler assumed all along.
+Three kinds of test, all under `node:test`:
+
+- **Pure logic** — most of `tests/`, plain function calls.
+- **Convex functions**, against an in-memory backend via `convex-test` (`tests/sync-push.test.ts`). Real queries and writes, not mocks.
+- **React**, via `@testing-library/react` on `@happy-dom/global-registrator` (`tests/sync-drain.test.ts`). Any test that renders must `import "./dom"` **first** — ESM runs imports in order, and that is what puts `document` and `localStorage` in place before React or `lib/local/store` are evaluated.
+
+The package is `"type": "module"`, which is load-bearing rather than stylistic. `@convex-dev/auth/server` publishes no `require` export, so the Convex tests cannot run at all under the CommonJS loader. Marking only *some* directories as ESM is worse than not doing it: `lib/local/store` keeps module-level state, and loading it as both CJS and ESM gives you two copies of it, so a test seeds one and the component under test reads the other. That failure is silent — the tests pass while asserting nothing.
 
 ## Dev fast mode
 
