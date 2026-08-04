@@ -2,7 +2,6 @@
 
 import { useConvexAuth } from "convex/react";
 import { useEffect } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { copy, t } from "@/lib/copy";
 import { faClock, faDigits } from "@/lib/format";
@@ -93,6 +92,12 @@ function RingScreen({ state, now }: { state: LocalState; now: number }) {
       <p className="max-w-full truncate text-center text-muted-foreground">
         {isWork ? taskName(state, ring.categoryClientId) : KIND_LABEL[ring.kind]}
       </p>
+      <div className="flex items-center gap-2">
+        <BellRing className="size-8 animate-pulse" />
+        <p className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          {isWork ? copy.timer.ringWorkTitle : copy.timer.ringBreakTitle}
+        </p>
+      </div>
       {/* Ring time, not a countdown: it counts up, and it is never focus.
           Red is the one hue the app allows itself, and this is what it is
           for — a clock that has stopped meaning "time left" has to be
@@ -103,25 +108,11 @@ function RingScreen({ state, now }: { state: LocalState; now: number }) {
       >
         +{faClock(now - ring.endedAt)}
       </p>
-      {/* The same bordered, iconned alert the login page and the picker use
-          for anything the user has to actually read. */}
-      <Alert className="max-w-xs text-foreground">
-        <BellRing className="animate-pulse" />
-        <AlertTitle>
-          {isWork ? copy.timer.ringWorkTitle : copy.timer.ringBreakTitle}
-        </AlertTitle>
-        <AlertDescription>
-          {isWork
-            ? breakLeft > 0
-              ? copy.timer.ringWorkHint
-              : copy.timer.ringWorkHintNoBreak
-            : copy.timer.ringBreakHint}
-        </AlertDescription>
-      </Alert>
       <CycleDots count={state.cycleCount} perCycle={state.settings.perCycle} />
       {isWork ? (
         <Button
           size="lg"
+          variant="outline"
           className="w-56"
           onClick={() => {
             unlockAudio();
@@ -136,6 +127,7 @@ function RingScreen({ state, now }: { state: LocalState; now: number }) {
         <div className="flex w-full max-w-xs flex-col gap-2">
           <Button
             size="lg"
+            variant="outline"
             disabled={state.selectedCategoryId === null}
             onClick={() => {
               unlockAudio();
