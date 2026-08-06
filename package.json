@@ -17,6 +17,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "convex": "^1.42.3",
+    "html-to-image": "^1.11.13",
     "lucia": "^3.2.0",
     "lucide-react": "^1.26.0",
     "motion": "^12.42.2",
