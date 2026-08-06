@@ -1,7 +1,7 @@
 "use client";
 
 import { toSvg } from "html-to-image";
-import { Download } from "lucide-react";
+import { ImageDown } from "lucide-react";
 import Image from "next/image";
 import {
   useCallback,
@@ -11,6 +11,11 @@ import {
   useSyncExternalStore,
 } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { bannerFor } from "@/lib/banners";
 import { copy } from "@/lib/copy";
 import type { FocusDay, FocusSlice } from "@/lib/focus-history";
@@ -208,18 +213,29 @@ export function DayCard({
           </div>
           <div className="relative aspect-square w-1/2 shrink-0 overflow-hidden">
             <div className="absolute inset-0 z-10 bg-linear-to-t from-background via-background/20 to-transparent" />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={copy.profile.downloadAria}
-              disabled={downloading}
-              onClick={handleDownload}
-              {...{ [SCREENSHOT_IGNORE]: "" }}
-              className="absolute end-2 top-2 z-20 bg-background/50 text-foreground backdrop-blur-sm hover:bg-background/70"
-            >
-              <Download />
-            </Button>
+            {/* Physical top-left, not the logical start/end — the outline
+                keeps it readable over the artwork without needing a
+                backdrop blur. icon-sm matches the dialog close button, the
+                other icon-only control in the app. */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label={copy.profile.downloadAria}
+                  disabled={downloading}
+                  onClick={handleDownload}
+                  {...{ [SCREENSHOT_IGNORE]: "" }}
+                  className="absolute top-2 left-2 z-20"
+                >
+                  <ImageDown />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {copy.profile.downloadAria}
+              </TooltipContent>
+            </Tooltip>
             {src !== null && (
               <Image
                 src={src}
