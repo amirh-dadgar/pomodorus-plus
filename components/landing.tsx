@@ -1,18 +1,9 @@
 "use client";
 
 import Image from "next/image";
-// A fixed image rather than a draw from lib/banners like the profile does: a
-// random pick would either pop in on the client or vary per request, and the
-// hero is the first thing painted.
-//
-// Imported rather than written as a path so the URL carries a content hash.
-// Note Turbopack can't decode AVIF, so the import is only ever a string — no
-// intrinsic width/height and no blurDataURL — which is why the image is sized
-// by its wrapper below instead of by the import.
-import hero from "@/public/main.avif";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaGithub } from "react-icons/fa6";
+import { FaGithub, FaClock } from "react-icons/fa6";
 import { Feed } from "@/components/feed";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -25,7 +16,6 @@ export function Landing() {
   const router = useRouter();
   return (
     <main className="flex flex-1 flex-col">
-      {/**/}
       {/* Full-bleed to the content frame and cropped to a band: the source is
           square, and a square at this width would push everything that says
           what the app is below the fold. The wrapper owns the box, so the
@@ -36,20 +26,17 @@ export function Landing() {
             whatever the image is doing behind it. The inset keeps a wide
             tracking-widest title off the frame edges. */}
         <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t items-end via-background/50 from-background to-transparent flex justify-center px-6 pb-4">
-          <h1 className="lg:text-6xl text-3xl text-center tracking-widest font-light uppercase text-yellow-600">
-            {copy.landing.tagline}
+          <h1 dir="ltr" className="flex items-center justify-center gap-1 lg:text-6xl text-3xl text-center tracking-widest font-light uppercase text-yellow-600">
+            Pomodorus<span className="text-6xl lg:text-8xl leading-none">+</span>
           </h1>
         </div>
         <Image
-          src={hero}
+          src="/main-2.avif"
           alt=""
           fill
           // `priority` is deprecated as of Next 16; `preload` is the same
           // <link rel=preload> for what is unambiguously the LCP element.
           preload
-          // The source is an already-optimal 11KB AVIF at 941px. Running it
-          // through the optimizer re-encodes it to a 34KB WebP (42KB JPEG for
-          // older clients) — three times the bytes for the LCP image.
           unoptimized
           sizes="(max-width: 36rem) 100vw, 36rem"
           className="object-cover"
@@ -57,45 +44,35 @@ export function Landing() {
       </div>
 
       <div className="flex flex-col gap-8 px-6 pb-10 sm:gap-10">
-        <section className="flex flex-col items-center gap-4">
-          <p className="text-center text-sm md:text-lg  sm:text-base">
-            {copy.landing.pitch}
-          </p>
+        <div className="flex flex-col items-center gap-4">
           <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
-            {/* Timer: works offline, no login required — renders from the
-                local store under an anonymous key. Uses the router directly
-                (not <Link>) so there is zero chance a stale/intercepted
-                navigation slips in. */}
             <Button
               size="lg"
               className="h-11 w-40"
               onClick={() => {
-                console.log("[landing] timer clicked -> /app");
                 router.push("/app");
               }}
             >
+              <FaClock className="mr-2 size-5" />
               {copy.header.timer}
             </Button>
+
             <Link
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "h-11 w-40",
+                "h-11 w-40"
               )}
             >
               <FaGithub className="size-5" />
               {copy.landing.github}
             </Link>
           </div>
-        </section>
+        </div>
 
         <div className="h-0.5 bg-linear-to-r from-transparent via-border to-transparent" />
-
-        <p className="text-xs leading-7 text-muted-foreground sm:text-sm sm:leading-8">
-          {copy.landing.sub}
-        </p>
 
         <Feed />
       </div>
