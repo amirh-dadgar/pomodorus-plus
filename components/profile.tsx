@@ -1,19 +1,21 @@
 "use client";
 
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { api } from "@/convex/_generated/api";
 import { DayCard, useBanner } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
+import { PeepAvatar, loadPeep } from "@/components/peep-picker";
+import { subscribePeep } from "@/lib/peep-store";
+import { type PeepSelection } from "@/lib/peeps-parts";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy, t } from "@/lib/copy";
 import { focusHistory, type ChartPayload } from "@/lib/focus-history";
+import { localFocusHistory } from "@/lib/local-chart";
+import { useLocalState, useTimerNow } from "@/lib/local/hooks";
 import { faDigits } from "@/lib/format";
 
 const RANGES = [7, 30, 90] as const;
@@ -60,11 +62,21 @@ function ChartAreaSkeleton() {
 function EmptyRange({
   username,
   banners,
+  peep,
+  offline,
 }: {
   username: string;
   banners: string[];
+  /** The saved avatar (live state), falling back to storage on first paint. */
+  peep: PeepSelection | null;
+  /** Local-first view: never render an avatar — there is none offline. */
+  offline?: boolean;
 }) {
   const src = useBanner(banners, `${username}:empty`);
+  // A saved Open Peeps avatar replaces the default illustration when present.
+  // Offline/local profiles have no avatar, so we neither read localStorage
+  // (which would mismatch SSR) nor paint one.
+  const savedPeep = offline ? null : peep ?? loadPeep();
 
   return (
     <div className="mt-6 flex flex-col items-center gap-6 border p-12 text-center sm:p-20">
@@ -72,16 +84,20 @@ function EmptyRange({
           of the page instead of sitting in a box on it. */}
       <div className="relative aspect-square w-36 shrink-0 overflow-hidden sm:w-44">
         <div className="absolute inset-0 z-10 bg-linear-to-t from-background via-background/20 to-transparent" />
-        {src !== null && (
-          <Image
-            src={src}
-            alt=""
-            fill
-            sizes="11rem"
-            // Hand-optimised AVIF already; see the day card.
-            unoptimized
-            className="object-cover"
-          />
+        {!offline && savedPeep ? (
+          <PeepAvatar selection={savedPeep} className="h-full w-full" />
+        ) : (
+          src !== null && (
+            <Image
+              src={src}
+              alt=""
+              fill
+              sizes="11rem"
+              // Hand-optimised AVIF already; see the day card.
+              unoptimized
+              className="object-cover"
+            />
+          )
         )}
       </div>
       <p className="text-base font-bold sm:text-lg">
@@ -93,39 +109,53 @@ function EmptyRange({
 
 // Signing out lives here because the profile is the only page a signed-in
 // visitor has of their own; the nav bar is shared with signed-out visitors.
-function SignOutButton() {
-  const { signOut } = useAuthActions();
-  const router = useRouter();
-
-  return (
-    <Button
-      size="sm"
-      variant="outline"
-      className="text-muted-foreground"
-      onClick={async () => {
-        // A failed sign-out still means leaving: the session it could not
-        // clear is the server's problem, not something to strand the
-        // visitor on their own profile over.
-        await signOut().catch(() => {});
-        router.push("/");
-      }}
-    >
-      <LogOut />
-      {copy.header.signOut}
-    </Button>
-  );
-}
-
 export function Profile({
   username,
   banners,
+  offline = false,
 }: {
   username: string;
   banners: string[];
+  /** Local-first view: chart comes from LocalState, no login, no avatar. */
+  offline?: boolean;
 }) {
   const [range, setRange] = useState<Range>(7);
   const [hovered, setHovered] = useState<string | null>(null);
-  const live = useQuery(api.profiles.chart, { username, days: range });
+  // The saved avatar, kept in state so saving the picker re-renders live
+  // (without a page refresh). Seeded from storage AFTER mount (not in the
+  // initializer) so server and first client render agree on `null` and we
+  // avoid a hydration mismatch — localStorage only exists on the client.
+  // The read is deferred to a frame so it isn't a synchronous setState in the
+  // effect (which would trip the hooks lint rule and can cascade renders).
+  // We also subscribe to the peep store (notified by the picker on save) and
+  // the `peep:updated` window event, so a save made from the nav (which lives
+  // outside this component) still refreshes the header avatar instantly.
+  const [peep, setPeep] = useState<PeepSelection | null>(null);
+  useEffect(() => {
+    const sync = () => setPeep(loadPeep());
+    const id = requestAnimationFrame(sync);
+    const unsub = subscribePeep(() => setPeep(loadPeep()));
+    window.addEventListener("peep:updated", sync);
+    return () => {
+      cancelAnimationFrame(id);
+      unsub();
+      window.removeEventListener("peep:updated", sync);
+    };
+  }, []);
+  // Always-available avatar for the persistent header slot. Sourced only from
+  // the `peep` state (populated after mount), never read from localStorage
+  // during render, so SSR and the first client paint match.
+  const savedPeepAlways = peep;
+  // Offline/local-first view: source the chart from LocalState, never touch
+  // the server. The hooks below are still called unconditionally (rules of
+  // hooks) but their results are only used in the online branch.
+  const localState = useLocalState();
+  const localNow = useTimerNow();
+  // Always call the hook (rules of hooks); only actually fetch when online.
+  const live = useQuery(
+    api.profiles.chart,
+    offline ? "skip" : { username, days: range },
+  );
 
   // Switching ranges resubscribes the query, which momentarily returns
   // undefined. Keeping the last payload is what lets the page shell stay
@@ -133,7 +163,9 @@ export function Profile({
   // history module decides which of those two is happening.
   const [cached, setCached] = useState<ChartPayload | undefined>(undefined);
   if (live !== undefined && live !== cached) setCached(live);
-  const view = focusHistory({ live, cached, hovered });
+  const view = offline
+    ? localFocusHistory({ state: localState, range, now: localNow, hovered })
+    : focusHistory({ live, cached, hovered });
 
   // Someone else's profile is a public page — only its owner gets the button.
   const isOwner =
@@ -146,15 +178,28 @@ export function Profile({
           height in every state — including the states with no button — so
           the row does not grow under the page when auth resolves. */}
       <div className="flex h-8 items-center justify-between gap-3">
-        <h1 className="text-base font-medium">{copy.profile.title}</h1>
-        {isOwner && <SignOutButton />}
+        <div className="flex items-center gap-3">
+          {/* Avatar is account-only (offline/local users never build one). */}
+          {!offline && savedPeepAlways ? (
+            <PeepAvatar
+              selection={savedPeepAlways}
+              className="size-20 shrink-0 overflow-hidden rounded-full border bg-[#f4f4f5]"
+            />
+          ) : !offline ? (
+            <span className="size-20 shrink-0 rounded-full border bg-[#f4f4f5]" />
+          ) : null}
+          <div className="flex flex-col justify-center">
+            <span className="text-base font-medium">
+              {offline ? copy.profile.guest ?? "مهمان" : username}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Every state below opens on one `mt-8`. The gap used to be that plus a
-          page-top padding of its own — two spacings for one edge, from back
-          when nothing sat above them. */}
+      {/* A gap above the chart so the header (avatar + controls) doesn't
+          crowd it. */}
       {view.state === "loading" ? (
-        <div className="mt-8">
+        <div className="mt-12">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-4 w-28" />
             <Skeleton className="h-7 w-40" />
@@ -166,7 +211,7 @@ export function Profile({
           {copy.profile.notFound}
         </p>
       ) : (
-        <div className="mt-8">
+        <div className="mt-12">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-sm font-medium text-muted-foreground">
               {copy.profile.focusPerDay}
@@ -190,7 +235,7 @@ export function Profile({
           {view.state === "reloading" ? (
             <ChartAreaSkeleton />
           ) : view.state === "empty" ? (
-            <EmptyRange username={view.username} banners={banners} />
+            <EmptyRange username={view.username} banners={banners} peep={peep} offline={offline} />
           ) : (
             <>
               <div className="mt-4">
@@ -218,8 +263,6 @@ export function Profile({
                   >
                     <DayCard
                       day={view.selected}
-                      username={view.username}
-                      banners={banners}
                     />
                   </motion.div>
                 )}

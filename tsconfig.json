@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "convex-dev/auth/react": ["./node_modules/@convex-dev/auth/dist/react/index"]
     }
   },
   "include": [

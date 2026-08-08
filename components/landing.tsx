@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 // A fixed image rather than a draw from lib/banners like the profile does: a
 // random pick would either pop in on the client or vary per request, and the
@@ -9,9 +11,10 @@ import Image from "next/image";
 // by its wrapper below instead of by the import.
 import hero from "@/public/main.avif";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FaGithub } from "react-icons/fa6";
 import { Feed } from "@/components/feed";
-import { LandingCta } from "@/components/landing-cta";
+import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
@@ -19,35 +22,9 @@ import { cn } from "@/lib/utils";
 const REPO_URL = "https://github.com/yazdanctx/pomodorus";
 
 export function Landing() {
+  const router = useRouter();
   return (
     <main className="flex flex-1 flex-col">
-      {/* <div className="mx-6 mt-4"> */}
-      {/*   <div className="rounded-lg border border-yellow-600/30 bg-yellow-600/10 backdrop-blur-sm px-4 py-3 text-center"> */}
-      {/*     <p className="text-sm sm:text-base text-yellow-600/90 leading-relaxed"> */}
-      {/*       یه{" "} */}
-      {/*       <span className="font-medium text-yellow-600">Hard Refresh</span>{" "} */}
-      {/*       بزنید — فیچرهای جدید اضافه شده و ممکنه لود نشده باشه */}
-      {/*     </p> */}
-      {/*     <p className="text-sm text-yellow-600/70 mt-1.5 font-mono tracking-wide"> */}
-      {/*       <span className="hidden sm:inline">Ctrl + Shift + R</span> */}
-      {/*       <span className="sm:hidden">⌘ + Shift + R</span> */}
-      {/*       <span className="mx-1.5 text-yellow-600/40">|</span> */}
-      {/*       <span className="hidden sm:inline">Command + Shift + R</span> */}
-      {/*       <span className="sm:hidden">Ctrl + Shift + R</span> */}
-      {/*     </p> */}
-      {/*     <p className="text-sm text-yellow-600/60 mt-1.5"> */}
-      {/*       باگی دیدی؟{" "} */}
-      {/*       <a */}
-      {/*         href="https://t.me/antimatter0x1" */}
-      {/*         target="_blank" */}
-      {/*         rel="noopener noreferrer" */}
-      {/*         className="underline underline-offset-2 decoration-yellow-600/40 hover:text-yellow-600 hover:decoration-yellow-600/80 transition-colors" */}
-      {/*       > */}
-      {/*         بهم پیام بده */}
-      {/*       </a> */}
-      {/*     </p> */}
-      {/*   </div> */}
-      {/* </div> */}
       {/**/}
       {/* Full-bleed to the content frame and cropped to a band: the source is
           square, and a square at this width would push everything that says
@@ -85,7 +62,20 @@ export function Landing() {
             {copy.landing.pitch}
           </p>
           <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
-            <LandingCta />
+            {/* Timer: works offline, no login required — renders from the
+                local store under an anonymous key. Uses the router directly
+                (not <Link>) so there is zero chance a stale/intercepted
+                navigation slips in. */}
+            <Button
+              size="lg"
+              className="h-11 w-40"
+              onClick={() => {
+                console.log("[landing] timer clicked -> /app");
+                router.push("/app");
+              }}
+            >
+              {copy.header.timer}
+            </Button>
             <Link
               href={REPO_URL}
               target="_blank"

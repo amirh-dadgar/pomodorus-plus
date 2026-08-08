@@ -64,7 +64,10 @@
     "settingsDone": "باشه",
     "count": "{n} تا",
     "todaySummary": "امروز {count} تا — {duration}",
-    "todayEmpty": "امروز تمرکز نکردی کلا"
+    "todayEmpty": "امروز تمرکز نکردی کلا",
+    "motivation": "انگیزه",
+    "motivationAnother": "یکی دیگه!",
+    "peep": "آواتار"
   },
   "feed": {
     "title": "کیا آنلاینن؟",
@@ -92,6 +95,7 @@
   },
   "profile": {
     "title": "پروفایل",
+    "guest": "مهمان",
     "notFound": "همچین کسی نداریم 🤷",
     "emptyTitle": "اینجا فعلا خالیه",
     "focusPerDay": "تایم تمرکز روزانه",

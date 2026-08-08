@@ -1,11 +1,14 @@
 "use client";
 
 import { useConvexAuth } from "convex/react";
+import { useAuthActions } from "convex-dev/auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BellRing, Scan, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MotivationButton } from "@/components/motivation-button";
+import { PeepPicker } from "@/components/peep-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/lib/copy";
 import { faClock } from "@/lib/format";
@@ -59,7 +62,9 @@ function Logo() {
 
 export function NavBar() {
   const pathname = usePathname();
+  const isProfilePage = /^\/u\/[^/]+/.test(pathname ?? "");
   const { isAuthenticated, isLoading } = useConvexAuth();
+  const { signOut } = useAuthActions();
   const username = useLocalIdentity();
   const state = useLocalState();
   const now = useTimerNow();
@@ -75,8 +80,8 @@ export function NavBar() {
   if (HIDE_ON.includes(pathname)) return null;
 
   const running = state.running;
-  const ringing = state.ringing;
-  const remainingMs = running ? Math.max(0, endAt(running) - now) : null;
+    const ringing = state.ringing;
+    const remainingMs = running ? Math.max(0, endAt(running, now) - now) : null;
 
   return (
     // h-14 rather than padding alone: the bar keeps its height even in the
@@ -98,41 +103,63 @@ export function NavBar() {
           the inversion has to be legible at a glance, not just in the
           digits. */}
       <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button asChild size="sm" variant="outline">
-          <Link
-            href="/app"
-            className={
-              ringing ? "text-rose-500 animate-pulse" : "hover:text-foreground"
-            }
+        {/* Signed-in-only controls: sign out, then the owner's avatar +
+            motivation pickers, then the shared timer + profile links. */}
+        {isAuthenticated && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-muted-foreground"
+            onClick={async () => {
+              await signOut().catch(() => {});
+              window.location.href = "/";
+            }}
           >
-            {ringing ? (
-              <>
-                <span
-                  className="w-10 flex justify-start font-mono tabular-nums"
-                  dir="ltr"
-                >
-                  +{faClock(now - ringing.endedAt)}
-                </span>
-                <BellRing size={15} />
-              </>
-            ) : remainingMs !== null ? (
-              <>
-                <span
-                  className="w-10 flex justify-start font-mono tabular-nums"
-                  dir="ltr"
-                >
-                  {faClock(remainingMs)}
-                </span>
-                <Scan size={15} className="text-rose-500 animate-pulse" />
-              </>
-            ) : (
-              <>
-                <Timer size={15} />
-                {copy.header.timer}
-              </>
-            )}
-          </Link>
-        </Button>
+            {copy.header.signOut}
+          </Button>
+        )}
+        {/* Motivation is always available — it only reads the local quotes
+            file, so neither auth nor page context gates it. The avatar
+            picker stays account-only. */}
+        <MotivationButton />
+        {isAuthenticated && isProfilePage && <PeepPicker />}
+        {isProfilePage && (
+          <Button asChild size="sm" variant="outline">
+            <Link
+              href="/app"
+              className={
+                ringing ? "text-rose-500 animate-pulse" : "hover:text-foreground"
+              }
+            >
+              {ringing ? (
+                <>
+                  <span
+                    className="w-10 flex justify-start font-mono tabular-nums"
+                    dir="ltr"
+                  >
+                    +{faClock(now - ringing.endedAt)}
+                  </span>
+                  <BellRing size={15} />
+                </>
+              ) : remainingMs !== null ? (
+                <>
+                  <span
+                    className="w-10 flex justify-start font-mono tabular-nums"
+                    dir="ltr"
+                  >
+                    {faClock(remainingMs)}
+                  </span>
+                  <Scan size={15} className="text-rose-500 animate-pulse" />
+                </>
+              ) : (
+                <>
+                  <Timer size={15} />
+                  {copy.header.timer}
+                </>
+              )}
+            </Link>
+          </Button>
+        )}
         {/* Signed in but the username hasn't arrived yet is still "loading":
             guessing here is what used to flash the wrong CTA. It falls back
             to the timer once auth has settled, so a device that can't reach
@@ -146,9 +173,14 @@ export function NavBar() {
             </Link>
           </Button>
         ) : (
-          <Button asChild size="sm" variant="outline" className={CTA_BOX}>
-            <Link href="/login">{copy.landing.enter}</Link>
-          </Button>
+          <>
+            <Button asChild size="sm" variant="outline" className={CTA_BOX}>
+              <Link href="/login">{copy.landing.enter}</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className={CTA_BOX}>
+              <Link href="/u/local">{copy.header.myProfile}</Link>
+            </Button>
+          </>
         )}
       </nav>
     </header>
