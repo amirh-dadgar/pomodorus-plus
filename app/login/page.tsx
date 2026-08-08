@@ -89,7 +89,7 @@ export default function LoginPage() {
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-xs space-y-8">
           {/* Set like the hero's title — same treatment, its own size. */}
-          <h1 className="text-center text-2xl font-light tracking-widest uppercase text-yellow-600">
+          <h1 dir="ltr" className="text-center text-4xl font-light tracking-widest uppercase text-yellow-600">
             {copy.app.name}
           </h1>
           <form onSubmit={handleSubmit} className="space-y-4">

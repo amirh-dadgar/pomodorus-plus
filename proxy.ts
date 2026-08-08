@@ -13,6 +13,7 @@ const isPublicPage = createRouteMatcher([
   "/",
   "/login",
   "/app",
+  "/leaderboard",
   "/u/(.*)",
   "/offline",
 ]);

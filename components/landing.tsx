@@ -10,7 +10,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 
-const REPO_URL = "https://github.com/yazdanctx/pomodorus";
+const REPO_URL = "https://github.com/amirh-dadgar/pomodorus-plus";
 
 export function Landing() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export function Landing() {
             tracking-widest title off the frame edges. */}
         <div className="absolute left-0 right-0 top-0 bottom-0 z-5 bg-linear-to-t items-end via-background/50 from-background to-transparent flex justify-center px-6 pb-4">
           <h1 dir="ltr" className="flex items-center justify-center gap-1 lg:text-6xl text-3xl text-center tracking-widest font-light uppercase text-yellow-600">
-            Pomodorus<span className="text-6xl lg:text-8xl leading-none">+</span>
+            Pomodorus<span className="text-4xl lg:text-5xl leading-none">+</span>
           </h1>
         </div>
         <Image
@@ -43,7 +43,7 @@ export function Landing() {
         />
       </div>
 
-      <div className="flex flex-col gap-8 px-6 pb-10 sm:gap-10">
+      <div className="flex flex-col gap-4 px-6 pb-10 sm:gap-6">
         <div className="flex flex-col items-center gap-4">
           <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
             <Button
@@ -71,6 +71,19 @@ export function Landing() {
             </Link>
           </div>
         </div>
+
+        <footer className="mt-4 border-t pt-4 text-center text-sm leading-7 text-muted-foreground">
+          {copy.about.greeting}
+          <a
+            href="https://github.com/yazdanctx/pomodorus"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-yellow-600 hover:underline"
+          >
+            {copy.about.yazdan}
+          </a>
+          {copy.about.tail}
+        </footer>
 
         <div className="h-0.5 bg-linear-to-r from-transparent via-border to-transparent" />
 
