@@ -54,7 +54,7 @@ export function MotivationButton({ className }: { className?: string }) {
           size="sm"
           className={`text-muted-foreground ${className ?? ""}`}
         >
-          <Sparkles />
+          <Sparkles className="hidden size-4 sm:inline-block" />
           {copy.timer.motivation}
         </Button>
       </DialogTrigger>
