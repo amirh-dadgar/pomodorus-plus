@@ -86,19 +86,17 @@ function EmptyRange({
         <div className="absolute inset-0 z-10 bg-linear-to-t from-background via-background/20 to-transparent" />
         {!offline && savedPeep ? (
           <PeepAvatar selection={savedPeep} className="h-full w-full" />
-        ) : (
-          src !== null && (
-            <Image
-              src={src}
-              alt=""
-              fill
-              sizes="11rem"
-              // Hand-optimised AVIF already; see the day card.
-              unoptimized
-              className="object-cover"
-            />
-          )
-        )}
+        ) : !offline && src !== null ? (
+          <Image
+            src={src}
+            alt=""
+            fill
+            sizes="11rem"
+            // Hand-optimised AVIF already; see the day card.
+            unoptimized
+            className="object-cover"
+          />
+        ) : null}
       </div>
       <p className="text-base font-bold sm:text-lg">
         {copy.profile.emptyTitle}
