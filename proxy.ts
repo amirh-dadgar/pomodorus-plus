@@ -15,6 +15,7 @@ const isPublicPage = createRouteMatcher([
   "/app",
   "/leaderboard",
   "/api/feed",
+  "/api/profile-chart",
   "/u/(.*)",
   "/offline",
 ]);

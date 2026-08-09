@@ -17,7 +17,7 @@ const RANGES: { key: Range; label: string }[] = [
 ];
 
 export function Leaderboard() {
-  const [range, setRange] = useState<Range>("all");
+  const [range, setRange] = useState<Range>("today");
   const ranking = useQuery(api.leaderboard_cache.cachedRanking, { range, limit: 50 });
 
   return (

@@ -1,10 +1,8 @@
 "use client";
 
-import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { api } from "@/convex/_generated/api";
 import { DayCard, useBanner } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
 import { PeepAvatar, loadPeep } from "@/components/peep-picker";
@@ -152,10 +150,32 @@ export function Profile({
   const localState = useLocalState();
   const localNow = useTimerNow();
   // Always call the hook (rules of hooks); only actually fetch when online.
-  const live = useQuery(
-    api.profiles.chart,
-    offline ? "skip" : { username, days: range },
-  );
+  // Online profiles pull their chart from the source deployment (tacit-clam-994)
+  // via the /api/profile-chart proxy, since this site's functions live on a
+  // different deployment. See feed.tsx for the same pattern.
+  const [live, setLive] = useState<ChartPayload | undefined | null>(undefined);
+  const [chartLoading, setChartLoading] = useState(false);
+  useEffect(() => {
+    if (offline) return;
+    let cancelled = false;
+    setChartLoading(true);
+    fetch(`/api/profile-chart?username=${encodeURIComponent(username)}&days=${range}`, {
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setLive(data);
+      })
+      .catch(() => {
+        if (!cancelled) setLive(null);
+      })
+      .finally(() => {
+        if (!cancelled) setChartLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [offline, username, range]);
 
   // Switching ranges resubscribes the query, which momentarily returns
   // undefined. Keeping the last payload is what lets the page shell stay
