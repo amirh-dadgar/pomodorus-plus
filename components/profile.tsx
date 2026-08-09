@@ -171,11 +171,9 @@ export function Profile({
   // via the /api/profile-chart proxy, since this site's functions live on a
   // different deployment. See feed.tsx for the same pattern.
   const [live, setLive] = useState<ChartPayload | undefined | null>(undefined);
-  const [chartLoading, setChartLoading] = useState(false);
   useEffect(() => {
     if (offline) return;
     let cancelled = false;
-    setChartLoading(true);
     fetch(`/api/profile-chart?username=${encodeURIComponent(username)}&days=${range}`, {
       cache: "no-store",
     })
@@ -185,9 +183,6 @@ export function Profile({
       })
       .catch(() => {
         if (!cancelled) setLive(null);
-      })
-      .finally(() => {
-        if (!cancelled) setChartLoading(false);
       });
     return () => {
       cancelled = true;
