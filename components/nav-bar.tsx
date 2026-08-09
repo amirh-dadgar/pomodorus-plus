@@ -115,7 +115,7 @@ export function NavBar() {
             file, so neither auth nor page context gates it. The avatar
             picker stays account-only. */}
         <MotivationButton className="px-1.5 text-[10px] sm:px-3 sm:text-sm" />
-        {isAuthenticated && isProfilePage && <PeepPicker />}
+        {isAuthenticated && isProfilePage && <PeepPicker className="px-1.5 text-[10px] sm:px-3 sm:text-sm" />}
         {/* On the profile page the timer already runs in the background, so
             the nav only needs a compact link back to the app — no live clock,
             which would overflow the row on mobile. */}

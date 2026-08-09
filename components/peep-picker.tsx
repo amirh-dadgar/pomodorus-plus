@@ -155,9 +155,12 @@ export function PeepAvatar({
  */
 export function PeepPicker({
   onSaved,
+  className,
 }: {
   /** Called with the saved selection so the parent can re-render live. */
   onSaved?: (sel: PeepSelection) => void;
+  /** Extra classes for the trigger button (e.g. nav sizing). */
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<PeepPart>("head");
@@ -197,7 +200,7 @@ export function PeepPicker({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="text-muted-foreground">
+        <Button variant="outline" size="sm" className={`text-muted-foreground ${className ?? ""}`}>
           <User />
           {copy.timer.peep ?? "آواتار"}
         </Button>
