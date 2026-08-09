@@ -5,7 +5,7 @@ import { useAuthActions } from "convex-dev/auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BellRing, Scan, Timer } from "lucide-react";
+import { BellRing, LogIn, LogOut, Scan, Timer, Trophy, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MotivationButton } from "@/components/motivation-button";
 import { PeepPicker } from "@/components/peep-picker";
@@ -55,6 +55,7 @@ function Logo() {
 export function NavBar() {
   const pathname = usePathname();
   const isProfilePage = /^\/u\/[^/]+/.test(pathname ?? "");
+  const isAppPage = pathname === "/app";
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signOut } = useAuthActions();
   const username = useLocalIdentity();
@@ -98,17 +99,31 @@ export function NavBar() {
         {/* Signed-in-only controls: sign out, then the owner's avatar +
             motivation pickers, then the shared timer + profile links. */}
         {isAuthenticated && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="px-2 text-xs sm:px-3 sm:text-sm"
-            onClick={async () => {
-              await signOut().catch(() => {});
-              window.location.href = "/";
-            }}
-          >
-            {copy.header.signOut}
-          </Button>
+          <>
+            <Button
+              size="icon"
+              variant="outline"
+              aria-label={copy.header.signOut}
+              className="sm:hidden"
+              onClick={async () => {
+                await signOut().catch(() => {});
+                window.location.href = "/";
+              }}
+            >
+              <LogOut size={15} />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm"
+              onClick={async () => {
+                await signOut().catch(() => {});
+                window.location.href = "/";
+              }}
+            >
+              {copy.header.signOut}
+            </Button>
+          </>
         )}
         {/* Motivation is always available — it only reads the local quotes
             file, so neither auth nor page context gates it. The avatar
@@ -131,8 +146,9 @@ export function NavBar() {
           </Button>
         )}
         {/* On the landing page the timer isn't visible elsewhere, so when a
-            session is running we show a live mini-timer in the nav. */}
-        {!isProfilePage && remainingMs !== null && (
+            session is running we show a live mini-timer in the nav. On /app
+            the timer is already on-screen, so we skip it there. */}
+        {!isProfilePage && !isAppPage && remainingMs !== null && (
           <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
             <Link
               href="/app"
@@ -165,9 +181,17 @@ export function NavBar() {
           </Button>
         )}
         {/* The leaderboard is a global ranking — reachable from the landing
-            page. Hidden on profile pages to keep that nav focused. */}
+            page. Hidden on profile pages to keep that nav focused. Icon-only on
+            mobile to keep the row from overflowing. */}
         {!isProfilePage && (
-          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
+          <Button asChild size="icon" variant="outline" aria-label={copy.leaderboard?.title ?? "لیدربورد"} className="sm:hidden">
+            <Link href="/leaderboard">
+              <Trophy size={15} />
+            </Link>
+          </Button>
+        )}
+        {!isProfilePage && (
+          <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
             <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
           </Button>
         )}
@@ -178,17 +202,34 @@ export function NavBar() {
         {isLoading || (isAuthenticated && username === null && !settled) ? (
           <Skeleton className="h-7 w-16 rounded-none" />
         ) : isAuthenticated ? (
-          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
-            <Link href={username === null ? "/app" : `/u/${username}`}>
-              {username === null ? copy.header.timer : copy.header.myProfile}
-            </Link>
-          </Button>
+          <>
+            <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile} className="sm:hidden">
+              <Link href={username === null ? "/app" : `/u/${username}`}>
+                <User size={15} />
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
+              <Link href={username === null ? "/app" : `/u/${username}`}>
+                {username === null ? copy.header.timer : copy.header.myProfile}
+              </Link>
+            </Button>
+          </>
         ) : (
           <>
-            <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
+            <Button asChild size="icon" variant="outline" aria-label={copy.landing.enter} className="sm:hidden">
+              <Link href="/login">
+                <LogIn size={15} />
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
               <Link href="/login">{copy.landing.enter}</Link>
             </Button>
-            <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
+            <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile} className="sm:hidden">
+              <Link href="/u/local">
+                <User size={15} />
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
               <Link href="/u/local">{copy.header.myProfile}</Link>
             </Button>
           </>
