@@ -160,10 +160,13 @@ export function NavBar() {
             </Link>
           </Button>
         )}
-        {/* The leaderboard is a global ranking — always reachable, no auth. */}
-        <Button asChild size="sm" variant="outline" className={CTA_BOX}>
-          <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
-        </Button>
+        {/* The leaderboard is a global ranking — reachable from the landing
+            page. Hidden on profile pages to keep that nav focused. */}
+        {!isProfilePage && (
+          <Button asChild size="sm" variant="outline" className={CTA_BOX}>
+            <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
+          </Button>
+        )}
         {/* Signed in but the username hasn't arrived yet is still "loading":
             guessing here is what used to flash the wrong CTA. It falls back
             to the timer once auth has settled, so a device that can't reach

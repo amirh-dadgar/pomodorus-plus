@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { copy, t } from "@/lib/copy";
 import { focusHistory, type ChartPayload } from "@/lib/focus-history";
 import { localFocusHistory } from "@/lib/local-chart";
-import { useLocalState, useTimerNow } from "@/lib/local/hooks";
+import { useLocalState, useTimerNow, useLocalIdentity } from "@/lib/local/hooks";
 import { faDigits } from "@/lib/format";
 import { captureShareCard } from "@/lib/share-capture";
 import { Download } from "lucide-react";
@@ -205,8 +205,15 @@ export function Profile({
     : focusHistory({ live, cached, hovered });
 
   // Someone else's profile is a public page — only its owner gets the button.
+  // Owner = the signed-in visitor is looking at their own profile. We compute
+  // this locally (current identity vs the profile username) rather than from
+  // the source deployment's chart payload, because auth lives on this
+  // deployment, not on tacit-clam-994 where the chart is proxied from.
+  const currentUser = useLocalIdentity();
   const isOwner =
-    view.state !== "loading" && view.state !== "notFound" && view.isOwner;
+    !offline &&
+    currentUser !== null &&
+    currentUser === username;
 
   return (
     <main className="flex flex-1 flex-col p-6">
