@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -20,6 +20,12 @@ const RANGES: { key: Range; label: string }[] = [
 export function Leaderboard() {
   const [range, setRange] = useState<Range>("today");
   const ranking = useQuery(api.leaderboard_cache.cachedRanking, { range, limit: 50 });
+
+  // Kick the sync so the board reflects sessions from both deployments even
+  // though Vercel's free plan can't run a self-scheduling cron reliably.
+  useEffect(() => {
+    fetch("/api/sync-cron", { cache: "no-store" }).catch(() => {});
+  }, []);
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 pb-10">
