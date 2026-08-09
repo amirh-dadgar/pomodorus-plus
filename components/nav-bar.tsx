@@ -5,7 +5,7 @@ import { useAuthActions } from "convex-dev/auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BellRing, LogIn, LogOut, Scan, Timer, Trophy, User } from "lucide-react";
+import { BellRing, Scan, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MotivationButton } from "@/components/motivation-button";
 import { PeepPicker } from "@/components/peep-picker";
@@ -95,35 +95,21 @@ export function NavBar() {
           means, so it goes red and belled rather than outlined and scanned:
           the inversion has to be legible at a glance, not just in the
           digits. */}
-      <nav className="flex items-center gap-1 text-xs text-muted-foreground sm:gap-2 sm:text-sm">
+      <nav className="flex items-center gap-0.5 text-[10px] text-muted-foreground sm:gap-1 sm:text-xs">
         {/* Signed-in-only controls: sign out, then the owner's avatar +
             motivation pickers, then the shared timer + profile links. */}
         {isAuthenticated && (
-          <>
-            <Button
-              size="icon"
-              variant="outline"
-              aria-label={copy.header.signOut}
-              className="sm:hidden"
-              onClick={async () => {
-                await signOut().catch(() => {});
-                window.location.href = "/";
-              }}
-            >
-              <LogOut size={15} />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm"
-              onClick={async () => {
-                await signOut().catch(() => {});
-                window.location.href = "/";
-              }}
-            >
-              {copy.header.signOut}
-            </Button>
-          </>
+          <Button
+            size="sm"
+            variant="outline"
+            className="px-1.5 text-[10px] sm:px-2 sm:text-xs"
+            onClick={async () => {
+              await signOut().catch(() => {});
+              window.location.href = "/";
+            }}
+          >
+            {copy.header.signOut}
+          </Button>
         )}
         {/* Motivation is always available — it only reads the local quotes
             file, so neither auth nor page context gates it. The avatar
@@ -134,14 +120,15 @@ export function NavBar() {
             the nav only needs a compact link back to the app — no live clock,
             which would overflow the row on mobile. */}
         {isProfilePage && (
-          <Button asChild size="icon" variant="outline" aria-label={copy.header.timer}>
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
             <Link
               href="/app"
               className={
                 ringing ? "text-rose-500 animate-pulse" : "hover:text-foreground"
               }
             >
-              {ringing ? <BellRing size={14} /> : remainingMs !== null ? <Scan size={14} className="text-rose-500 animate-pulse" /> : <Timer size={14} />}
+              <Timer size={12} />
+              {copy.header.timer}
             </Link>
           </Button>
         )}
@@ -149,7 +136,7 @@ export function NavBar() {
             session is running we show a live mini-timer in the nav. On /app
             the timer is already on-screen, so we skip it there. */}
         {!isProfilePage && !isAppPage && remainingMs !== null && (
-          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
             <Link
               href="/app"
               className={
@@ -159,39 +146,31 @@ export function NavBar() {
               {ringing ? (
                 <>
                   <span
-                    className="w-10 flex justify-start font-mono tabular-nums"
+                    className="w-9 flex justify-start font-mono tabular-nums"
                     dir="ltr"
                   >
                     +{faClock(now - ringing.endedAt)}
                   </span>
-                  <BellRing size={14} />
+                  <BellRing size={12} />
                 </>
               ) : (
                 <>
                   <span
-                    className="w-10 flex justify-start font-mono tabular-nums"
+                    className="w-9 flex justify-start font-mono tabular-nums"
                     dir="ltr"
                   >
                     {faClock(remainingMs)}
                   </span>
-                  <Scan size={14} className="text-rose-500 animate-pulse" />
+                  <Scan size={12} className="text-rose-500 animate-pulse" />
                 </>
               )}
             </Link>
           </Button>
         )}
         {/* The leaderboard is a global ranking — reachable from the landing
-            page. Hidden on profile pages to keep that nav focused. Icon-only on
-            mobile to keep the row from overflowing. */}
+            page. Hidden on profile pages to keep that nav focused. */}
         {!isProfilePage && (
-          <Button asChild size="icon" variant="outline" aria-label={copy.leaderboard?.title ?? "لیدربورد"} className="sm:hidden">
-            <Link href="/leaderboard">
-              <Trophy size={15} />
-            </Link>
-          </Button>
-        )}
-        {!isProfilePage && (
-          <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
             <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
           </Button>
         )}
@@ -200,36 +179,19 @@ export function NavBar() {
             to the timer once auth has settled, so a device that can't reach
             profiles.me is left with a working link rather than a pulse. */}
         {isLoading || (isAuthenticated && username === null && !settled) ? (
-          <Skeleton className="h-7 w-16 rounded-none" />
+          <Skeleton className="h-6 w-12 rounded-none" />
         ) : isAuthenticated ? (
-          <>
-            <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile} className="sm:hidden">
-              <Link href={username === null ? "/app" : `/u/${username}`}>
-                <User size={15} />
-              </Link>
-            </Button>
-            <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
-              <Link href={username === null ? "/app" : `/u/${username}`}>
-                {username === null ? copy.header.timer : copy.header.myProfile}
-              </Link>
-            </Button>
-          </>
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
+            <Link href={username === null ? "/app" : `/u/${username}`}>
+              {username === null ? copy.header.timer : copy.header.myProfile}
+            </Link>
+          </Button>
         ) : (
           <>
-            <Button asChild size="icon" variant="outline" aria-label={copy.landing.enter} className="sm:hidden">
-              <Link href="/login">
-                <LogIn size={15} />
-              </Link>
-            </Button>
-            <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
+            <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
               <Link href="/login">{copy.landing.enter}</Link>
             </Button>
-            <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile} className="sm:hidden">
-              <Link href="/u/local">
-                <User size={15} />
-              </Link>
-            </Button>
-            <Button asChild size="sm" variant="outline" className="hidden px-2 text-xs sm:block sm:px-3 sm:text-sm">
+            <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
               <Link href="/u/local">{copy.header.myProfile}</Link>
             </Button>
           </>

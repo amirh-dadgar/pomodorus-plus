@@ -107,7 +107,8 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname === "/manifest.webmanifest" ||
-    /^\/(icon-|apple-icon|favicon)/.test(url.pathname)
+    url.pathname === "/main-2.avif" ||
+    /^(\/(icon-|apple-icon|favicon)|^\/banners\/)/.test(url.pathname)
   ) {
     event.respondWith(handleAsset(request));
   }
