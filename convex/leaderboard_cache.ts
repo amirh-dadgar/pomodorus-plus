@@ -59,8 +59,7 @@ export const syncFromFeed = internalAction({
       // Feed unreachable — fall back to the seeded list only.
     }
 
-    const added = 0;
-    const updated = 0;
+    let added = 0;
 
     for (const username of usernames) {
       // Get this user's lifetime focus time from the source deployment.
@@ -68,7 +67,7 @@ export const syncFromFeed = internalAction({
       try {
         const chart = (await sourceQuery("profiles:chart", {
           username,
-          days: 365,
+          days: 90,
         })) as { days?: { totalMs?: number }[] } | null;
         if (chart?.days) {
           for (const d of chart.days) totalMs += d.totalMs ?? 0;
@@ -85,7 +84,7 @@ export const syncFromFeed = internalAction({
       added++;
     }
 
-    return { added, updated };
+    return { added };
   },
 });
 
