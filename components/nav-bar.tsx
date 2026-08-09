@@ -11,6 +11,7 @@ import { MotivationButton } from "@/components/motivation-button";
 import { PeepPicker } from "@/components/peep-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/lib/copy";
+import { faClock } from "@/lib/format";
 import {
   useLocalIdentity,
   useLocalState,
@@ -126,6 +127,40 @@ export function NavBar() {
               }
             >
               {ringing ? <BellRing size={14} /> : remainingMs !== null ? <Scan size={14} className="text-rose-500 animate-pulse" /> : <Timer size={14} />}
+            </Link>
+          </Button>
+        )}
+        {/* On the landing page the timer isn't visible elsewhere, so when a
+            session is running we show a live mini-timer in the nav. */}
+        {!isProfilePage && remainingMs !== null && (
+          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
+            <Link
+              href="/app"
+              className={
+                ringing ? "text-rose-500 animate-pulse" : "hover:text-foreground"
+              }
+            >
+              {ringing ? (
+                <>
+                  <span
+                    className="w-10 flex justify-start font-mono tabular-nums"
+                    dir="ltr"
+                  >
+                    +{faClock(now - ringing.endedAt)}
+                  </span>
+                  <BellRing size={14} />
+                </>
+              ) : (
+                <>
+                  <span
+                    className="w-10 flex justify-start font-mono tabular-nums"
+                    dir="ltr"
+                  >
+                    {faClock(remainingMs)}
+                  </span>
+                  <Scan size={14} className="text-rose-500 animate-pulse" />
+                </>
+              )}
             </Link>
           </Button>
         )}
