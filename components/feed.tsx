@@ -1,22 +1,51 @@
 "use client";
 
-import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api } from "@/convex/_generated/api";
 import { copy } from "@/lib/copy";
 import { faClock, enDigits } from "@/lib/format";
 import { useOnline } from "@/lib/local/hooks";
 import { isLive } from "@/lib/presence";
 
+type FeedEntry = {
+  id: string;
+  username: string;
+  kind: "work" | "shortBreak" | "longBreak";
+  label: string | null;
+  startedAt: number;
+  durationMs: number;
+};
+
 export function Feed() {
-  const feed = useQuery(api.sessions.activeFeed);
+  const [feed, setFeed] = useState<FeedEntry[] | null>(null);
   const online = useOnline();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(timer);
+  }, []);
+
+  // Pull the live feed from the source deployment's public REST API, so it
+  // reflects who is working on the production deployment (tacit-clam-994)
+  // even though this site's functions live elsewhere.
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/feed", { cache: "no-store" });
+        const data = (await res.json()) as FeedEntry[];
+        if (!cancelled) setFeed(data);
+      } catch {
+        if (!cancelled) setFeed([]);
+      }
+    }
+    load();
+    const poll = setInterval(load, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+    };
   }, []);
 
   // Presence rows self-expire at their end time; drop the ones the server
