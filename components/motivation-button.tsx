@@ -28,7 +28,7 @@ function pickQuote(previous: number | null): number {
  * re-rolls. Built on the app's own radix Dialog so it matches every other
  * dialog (same airy inset, same close affordance, same footer bar).
  */
-export function MotivationButton() {
+export function MotivationButton({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   // Index into the quotes array; initialised lazily on first open so the
   // very first quote is also random rather than a fixed entry.
@@ -52,7 +52,7 @@ export function MotivationButton() {
         <Button
           variant="outline"
           size="sm"
-          className="text-muted-foreground"
+          className={`text-muted-foreground ${className ?? ""}`}
         >
           <Sparkles />
           {copy.timer.motivation}

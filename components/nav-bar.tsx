@@ -95,14 +95,14 @@ export function NavBar() {
           means, so it goes red and belled rather than outlined and scanned:
           the inversion has to be legible at a glance, not just in the
           digits. */}
-      <nav className="flex items-center gap-0.5 text-[10px] text-muted-foreground sm:gap-1 sm:text-xs">
+      <nav className="flex items-center gap-1 text-[10px] text-muted-foreground sm:gap-2 sm:text-sm">
         {/* Signed-in-only controls: sign out, then the owner's avatar +
             motivation pickers, then the shared timer + profile links. */}
         {isAuthenticated && (
           <Button
             size="sm"
             variant="outline"
-            className="px-1.5 text-[10px] sm:px-2 sm:text-xs"
+            className="px-1.5 text-[10px] sm:px-3 sm:text-sm"
             onClick={async () => {
               await signOut().catch(() => {});
               window.location.href = "/";
@@ -114,13 +114,13 @@ export function NavBar() {
         {/* Motivation is always available — it only reads the local quotes
             file, so neither auth nor page context gates it. The avatar
             picker stays account-only. */}
-        <MotivationButton />
+        <MotivationButton className="px-1.5 text-[10px] sm:px-3 sm:text-sm" />
         {isAuthenticated && isProfilePage && <PeepPicker />}
         {/* On the profile page the timer already runs in the background, so
             the nav only needs a compact link back to the app — no live clock,
             which would overflow the row on mobile. */}
         {isProfilePage && (
-          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
             <Link
               href="/app"
               className={
@@ -134,9 +134,10 @@ export function NavBar() {
         )}
         {/* On the landing page the timer isn't visible elsewhere, so when a
             session is running we show a live mini-timer in the nav. On /app
-            the timer is already on-screen, so we skip it there. */}
-        {!isProfilePage && !isAppPage && remainingMs !== null && (
-          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
+            the timer is already on-screen, so we skip it there. It stays shown
+            during breaks too (running is true for work AND break). */}
+        {!isProfilePage && !isAppPage && running && (
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
             <Link
               href="/app"
               className={
@@ -159,7 +160,7 @@ export function NavBar() {
                     className="w-9 flex justify-start font-mono tabular-nums"
                     dir="ltr"
                   >
-                    {faClock(remainingMs)}
+                    {faClock(remainingMs ?? 0)}
                   </span>
                   <Scan size={12} className="text-rose-500 animate-pulse" />
                 </>
@@ -170,7 +171,7 @@ export function NavBar() {
         {/* The leaderboard is a global ranking — reachable from the landing
             page. Hidden on profile pages to keep that nav focused. */}
         {!isProfilePage && (
-          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
             <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
           </Button>
         )}
@@ -181,17 +182,17 @@ export function NavBar() {
         {isLoading || (isAuthenticated && username === null && !settled) ? (
           <Skeleton className="h-6 w-12 rounded-none" />
         ) : isAuthenticated ? (
-          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
             <Link href={username === null ? "/app" : `/u/${username}`}>
               {username === null ? copy.header.timer : copy.header.myProfile}
             </Link>
           </Button>
         ) : (
           <>
-            <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
+            <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
               <Link href="/login">{copy.landing.enter}</Link>
             </Button>
-            <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-2 sm:text-xs">
+            <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
               <Link href="/u/local">{copy.header.myProfile}</Link>
             </Button>
           </>
