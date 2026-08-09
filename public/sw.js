@@ -1,21 +1,31 @@
 // Offline service worker. Strategy:
-// - navigations: network-first, falling back to the cached copy of that
-//   page, then to /offline. /app is cached on each successful visit (it
-//   can't be precached: before sign-in it's just a redirect to /login).
+// - On the first successful navigation (e.g. just opening the landing page),
+//   we precache the core app pages (/, /app, /leaderboard, /u/local, /offline)
+//   so a single online load makes the whole app usable offline.
+// - navigations: network-first, falling back to the cached copy, then /offline.
 // - /_next/static + icons: cache-first; the URLs are content-hashed or
-//   effectively immutable.
+//   effectively immutable, so once any page loads them they stay cached.
 // Bump VERSION to invalidate everything after breaking changes.
-const VERSION = "v3";
+const VERSION = "v4";
 const PAGES = `pomodorus-pages-${VERSION}`;
 const ASSETS = `pomodorus-assets-${VERSION}`;
-const PRECACHE = ["/", "/app", "/offline", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
+const CORE_PAGES = [
+  "/",
+  "/app",
+  "/leaderboard",
+  "/u/local",
+  "/offline",
+  "/manifest.webmanifest",
+  "/icon-192.png",
+  "/icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(PAGES);
       await Promise.all(
-        PRECACHE.map((url) =>
+        CORE_PAGES.map((url) =>
           cache.add(new Request(url, { cache: "reload" })).catch(() => {}),
         ),
       );
@@ -35,14 +45,37 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// When any core page is fetched successfully, also warm the rest of the app so
+// one online visit caches everything (landing -> timer + profile offline).
+async function warmCorePages() {
+  const cache = await caches.open(PAGES);
+  await Promise.all(
+    CORE_PAGES.map((url) =>
+      cache.match(url).then(
+        (hit) =>
+          hit ||
+          cache
+            .add(new Request(url, { cache: "reload" }))
+            .catch(() => {}),
+      ),
+    ),
+  );
+}
+
 async function handleNavigation(request) {
   const cache = await caches.open(PAGES);
   try {
     const response = await fetch(request);
-    // Cache successful same-origin pages (notably /app) for offline use.
-    // Redirects (auth bounces) are deliberately not cached.
-    if (response.ok && !response.redirected && new URL(request.url).origin === self.location.origin) {
+    // Cache successful same-origin pages. Redirects (auth bounces) are
+    // deliberately not cached.
+    if (
+      response.ok &&
+      !response.redirected &&
+      new URL(request.url).origin === self.location.origin
+    ) {
       cache.put(request, response.clone());
+      // Warm the rest of the app after a successful navigation.
+      event.waitUntil(warmCorePages());
     }
     return response;
   } catch {
