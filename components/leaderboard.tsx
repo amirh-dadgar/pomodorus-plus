@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { copy } from "@/lib/copy";
@@ -62,7 +63,12 @@ export function Leaderboard() {
               <span className="w-6 text-center text-sm font-bold text-muted-foreground">
                 {i + 1}
               </span>
-              <span className="font-medium">{row.username}</span>
+              <Link
+                href={`/u/${row.username}`}
+                className="font-medium hover:text-yellow-600 hover:underline"
+              >
+                {row.username}
+              </Link>
             </span>
             <span className="text-sm tabular-nums text-muted-foreground">
               {faDuration(row.ms)}

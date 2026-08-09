@@ -13,14 +13,22 @@ const SOURCE = "https://tacit-clam-994.convex.cloud";
 const TARGET = "https://dazzling-ocelot-629.convex.cloud";
 const SELF_PING_MS = 60_000; // 1 minute
 
+// Both deployments where users may time their sessions. Leaderboard must
+// include users from either.
+const SOURCES = [SOURCE, TARGET];
+
 const SEED_USERS = ["yazdanctx", "jinx", "amirhossein", "amirh-dadgar"];
 
 function tehranDayKey(ts: number): string {
   return new Date(ts + 3.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
-async function sourceQuery(path: string, args: Record<string, unknown>) {
-  const res = await fetch(`${SOURCE}/api/query`, {
+async function sourceQuery(
+  path: string,
+  args: Record<string, unknown>,
+  source = SOURCE,
+) {
+  const res = await fetch(`${source}/api/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ path, args }),
@@ -49,13 +57,17 @@ async function targetMutation(path: string, args: Record<string, unknown>) {
 export async function GET() {
   try {
     const usernames = new Set<string>(SEED_USERS);
-    try {
-      const feed = (await sourceQuery("sessions:activeFeed", {})) as {
-        username?: string;
-      }[];
-      for (const e of feed) if (e.username) usernames.add(e.username);
-    } catch {
-      // feed unreachable — fall back to seeds
+    // Gather usernames from the live feed on BOTH deployments, since visitors
+    // may time from either site.
+    for (const src of SOURCES) {
+      try {
+        const feed = (await sourceQuery("sessions:activeFeed", {}, src)) as {
+          username?: string;
+        }[];
+        for (const e of feed) if (e.username) usernames.add(e.username);
+      } catch {
+        // feed unreachable on this source — try the other
+      }
     }
 
     const todayKey = tehranDayKey(Date.now());
@@ -65,21 +77,30 @@ export async function GET() {
     let synced = 0;
     for (const username of usernames) {
       try {
-        const chart = (await sourceQuery("profiles:chart", {
-          username,
-          days: 90,
-        })) as { days?: { dayKey: string; totalMs?: number }[] } | null;
-        if (!chart?.days) continue;
+        // Read the chart from both deployments and merge per-day, since a user
+        // may have timed from either site.
         let totalMs = 0;
         let todayMs = 0;
         let weekMs = 0;
         let monthMs = 0;
-        for (const d of chart.days) {
-          const ms = d.totalMs ?? 0;
-          totalMs += ms;
-          if (d.dayKey >= monthCutoff) monthMs += ms;
-          if (d.dayKey >= weekCutoff) weekMs += ms;
-          if (d.dayKey === todayKey) todayMs += ms;
+        for (const src of SOURCES) {
+          try {
+            const chart = (await sourceQuery(
+              "profiles:chart",
+              { username, days: 90 },
+              src,
+            )) as { days?: { dayKey: string; totalMs?: number }[] } | null;
+            if (!chart?.days) continue;
+            for (const d of chart.days) {
+              const ms = d.totalMs ?? 0;
+              totalMs += ms;
+              if (d.dayKey >= monthCutoff) monthMs += ms;
+              if (d.dayKey >= weekCutoff) weekMs += ms;
+              if (d.dayKey === todayKey) todayMs += ms;
+            }
+          } catch {
+            // chart missing on this source — continue
+          }
         }
         await targetMutation("leaderboard_cache:upsertEntry", {
           username,
