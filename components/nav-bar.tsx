@@ -94,14 +94,14 @@ export function NavBar() {
           means, so it goes red and belled rather than outlined and scanned:
           the inversion has to be legible at a glance, not just in the
           digits. */}
-      <nav className="flex items-center gap-1 text-xs text-muted-foreground">
+      <nav className="flex items-center gap-1 text-xs text-muted-foreground sm:gap-2 sm:text-sm">
         {/* Signed-in-only controls: sign out, then the owner's avatar +
             motivation pickers, then the shared timer + profile links. */}
         {isAuthenticated && (
           <Button
             size="sm"
             variant="outline"
-            className="px-2 text-xs"
+            className="px-2 text-xs sm:px-3 sm:text-sm"
             onClick={async () => {
               await signOut().catch(() => {});
               window.location.href = "/";
@@ -116,7 +116,7 @@ export function NavBar() {
         <MotivationButton />
         {isAuthenticated && isProfilePage && <PeepPicker />}
         {isProfilePage && (
-          <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
             <Link
               href="/app"
               className={
@@ -155,7 +155,7 @@ export function NavBar() {
         {/* The leaderboard is a global ranking — reachable from the landing
             page. Hidden on profile pages to keep that nav focused. */}
         {!isProfilePage && (
-          <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
             <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
           </Button>
         )}
@@ -166,17 +166,17 @@ export function NavBar() {
         {isLoading || (isAuthenticated && username === null && !settled) ? (
           <Skeleton className="h-7 w-16 rounded-none" />
         ) : isAuthenticated ? (
-          <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
             <Link href={username === null ? "/app" : `/u/${username}`}>
               {username === null ? copy.header.timer : copy.header.myProfile}
             </Link>
           </Button>
         ) : (
           <>
-            <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+            <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
               <Link href="/login">{copy.landing.enter}</Link>
             </Button>
-            <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+            <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
               <Link href="/u/local">{copy.header.myProfile}</Link>
             </Button>
           </>
