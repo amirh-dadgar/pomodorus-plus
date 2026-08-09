@@ -1,12 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { DayCard, useBanner } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
 import { PeepAvatar, loadPeep } from "@/components/peep-picker";
-import { ShareCard } from "@/components/share-card";
 import { subscribePeep } from "@/lib/peep-store";
 import { type PeepSelection } from "@/lib/peeps-parts";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,8 @@ import { focusHistory, type ChartPayload } from "@/lib/focus-history";
 import { localFocusHistory } from "@/lib/local-chart";
 import { useLocalState, useTimerNow } from "@/lib/local/hooks";
 import { faDigits } from "@/lib/format";
-import { toPng } from "html-to-image";
+import { captureShareCard } from "@/lib/share-capture";
+import { Download } from "lucide-react";
 
 const RANGES = [7, 30, 90] as const;
 type Range = (typeof RANGES)[number];
@@ -143,23 +143,18 @@ export function Profile({
     };
   }, []);
   const savedPeepAlways = peep;
-  // Off-screen node captured by the "اسکرین شات" button. The live page is
-  // never mutated; only this hidden composite is rasterized and downloaded.
-  const shareRef = useRef<HTMLDivElement>(null);
+  // The "اسکرین شات" button composes a PNG via captureShareCard; the live
+  // page is never mutated, only the downloaded image is drawn on a canvas.
   const [sharing, setSharing] = useState(false);
   async function handleShare() {
-    if (!shareRef.current || sharing) return;
+    if (sharing) return;
     setSharing(true);
     try {
-      const dataUrl = await toPng(shareRef.current, {
-        pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: "#ffffff",
+      await captureShareCard({
+        username,
+        peep: offline ? null : savedPeepAlways,
+        day: view.state === "ready" ? (view.selected ?? null) : null,
       });
-      const link = document.createElement("a");
-      link.download = `pomodorus-${username}.png`;
-      link.href = dataUrl;
-      link.click();
     } catch {
       // Ignore capture failures; the live page stays intact.
     } finally {
@@ -236,19 +231,6 @@ export function Profile({
             </span>
           </div>
         </div>
-        {/* The share button: captures the off-screen composite, never the live
-            page, so the profile header stays put. */}
-        {!offline && (
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={handleShare}
-            disabled={sharing}
-            aria-label={copy.profile.downloadAria}
-          >
-            {copy.profile.downloadAria}
-          </Button>
-        )}
       </div>
 
       {/* A gap above the chart so the header (avatar + controls) doesn't
@@ -306,6 +288,21 @@ export function Profile({
                   incoming one until the outgoing has gone: the two cards differ
                   in height with the category list, and running them together
                   would shunt the page around mid-fade. */}
+              <div className="mt-6 flex justify-end">
+                {/* Owner-only: capture their own day card as a PNG. The live
+                    page is untouched; only the downloaded image is composed. */}
+                {isOwner && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleShare}
+                    disabled={sharing}
+                    aria-label={copy.profile.downloadAria}
+                  >
+                    <Download className="size-4" />
+                  </Button>
+                )}
+              </div>
               <AnimatePresence mode="wait">
                 {view.selected && (
                   <motion.div
@@ -326,14 +323,6 @@ export function Profile({
           )}
         </div>
       )}
-      {/* Off-screen share composition: captured by the screenshot button.
-          Kept out of the visible layout so the live profile is untouched. */}
-      <ShareCard
-        ref={shareRef}
-        username={username}
-        peep={offline ? null : savedPeepAlways}
-        day={view.state === "ready" ? (view.selected ?? null) : null}
-      />
     </main>
   );
 }
