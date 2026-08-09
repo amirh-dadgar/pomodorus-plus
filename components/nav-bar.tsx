@@ -5,7 +5,7 @@ import { useAuthActions } from "convex-dev/auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BellRing, Scan, Timer } from "lucide-react";
+import { BellRing, LogIn, LogOut, Scan, Timer, Trophy, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MotivationButton } from "@/components/motivation-button";
 import { PeepPicker } from "@/components/peep-picker";
@@ -23,7 +23,7 @@ const HIDE_ON = ["/login", "/offline"];
 
 // Both auth CTAs and the placeholder that stands in for them share one box, so
 // the bar is exactly as tall and the CTA exactly as wide before the auth state
-// resolves as after. Wide enough for the longer of «لاگین کن» and «پروفایل».
+// resolves as after.
 const CTA_BOX = "h-8 min-w-24";
 
 /**
@@ -102,20 +102,20 @@ export function NavBar() {
           means, so it goes red and belled rather than outlined and scanned:
           the inversion has to be legible at a glance, not just in the
           digits. */}
-      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
         {/* Signed-in-only controls: sign out, then the owner's avatar +
             motivation pickers, then the shared timer + profile links. */}
         {isAuthenticated && (
           <Button
-            size="sm"
+            size="icon"
             variant="outline"
-            className="text-muted-foreground"
+            aria-label={copy.header.signOut}
             onClick={async () => {
               await signOut().catch(() => {});
               window.location.href = "/";
             }}
           >
-            {copy.header.signOut}
+            <LogOut size={15} />
           </Button>
         )}
         {/* Motivation is always available — it only reads the local quotes
@@ -163,8 +163,10 @@ export function NavBar() {
         {/* The leaderboard is a global ranking — reachable from the landing
             page. Hidden on profile pages to keep that nav focused. */}
         {!isProfilePage && (
-          <Button asChild size="sm" variant="outline" className={CTA_BOX}>
-            <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
+          <Button asChild size="icon" variant="outline" aria-label={copy.leaderboard?.title ?? "لیدربورد"}>
+            <Link href="/leaderboard">
+              <Trophy size={15} />
+            </Link>
           </Button>
         )}
         {/* Signed in but the username hasn't arrived yet is still "loading":
@@ -174,18 +176,22 @@ export function NavBar() {
         {isLoading || (isAuthenticated && username === null && !settled) ? (
           <Skeleton className={`${CTA_BOX} rounded-none`} />
         ) : isAuthenticated ? (
-          <Button asChild size="sm" variant="outline" className={CTA_BOX}>
+          <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile}>
             <Link href={username === null ? "/app" : `/u/${username}`}>
-              {username === null ? copy.header.timer : copy.header.myProfile}
+              <User size={15} />
             </Link>
           </Button>
         ) : (
           <>
-            <Button asChild size="sm" variant="outline" className={CTA_BOX}>
-              <Link href="/login">{copy.landing.enter}</Link>
+            <Button asChild size="icon" variant="outline" aria-label={copy.landing.enter}>
+              <Link href="/login">
+                <LogIn size={15} />
+              </Link>
             </Button>
-            <Button asChild size="sm" variant="outline" className={CTA_BOX}>
-              <Link href="/u/local">{copy.header.myProfile}</Link>
+            <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile}>
+              <Link href="/u/local">
+                <User size={15} />
+              </Link>
             </Button>
           </>
         )}
