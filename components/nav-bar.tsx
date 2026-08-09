@@ -133,10 +133,13 @@ export function NavBar() {
           </Button>
         )}
         {/* On the landing page the timer isn't visible elsewhere, so when a
-            session is running we show a live mini-timer in the nav. On /app
-            the timer is already on-screen, so we skip it there. It stays shown
-            during breaks too (running is true for work AND break). */}
-        {!isProfilePage && !isAppPage && running && (
+            session is running (or ringing — the work just ended and the break
+            is owed) we show a live mini-timer in the nav. On /app the timer is
+            already on-screen, so we skip it there. It stays shown during the
+            ring/break too, because running is null once a session ends and
+            only `ringing` is set (ADR 0004: transitions are confirmed, never
+            automatic). */}
+        {!isProfilePage && !isAppPage && (running || ringing) && (
           <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
             <Link
               href="/app"
