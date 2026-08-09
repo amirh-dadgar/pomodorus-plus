@@ -128,6 +128,10 @@ function RingScreen({ state, now }: { state: LocalState; now: number }) {
           onClick={() => {
             unlockAudio();
             confirm();
+            // A confirmed session just landed in the chart; nudge the
+            // leaderboard cache so it reflects the new time without waiting
+            // for someone to open the leaderboard page.
+            void fetch("/api/sync-cron", { cache: "no-store" }).catch(() => {});
           }}
         >
           {breakLeft > 0 ? copy.timer.confirmWork : copy.timer.confirmWorkNoBreak}
@@ -153,6 +157,8 @@ function RingScreen({ state, now }: { state: LocalState; now: number }) {
             onClick={() => {
               unlockAudio();
               confirm();
+              // Same as above: a finished break should refresh the board.
+              void fetch("/api/sync-cron", { cache: "no-store" }).catch(() => {});
             }}
           >
             {copy.timer.confirmBreak}
