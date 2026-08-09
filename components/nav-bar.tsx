@@ -5,7 +5,7 @@ import { useAuthActions } from "convex-dev/auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BellRing, LogIn, LogOut, Scan, Timer, Trophy, User } from "lucide-react";
+import { BellRing, Scan, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MotivationButton } from "@/components/motivation-button";
 import { PeepPicker } from "@/components/peep-picker";
@@ -21,15 +21,7 @@ import { endAt } from "@/lib/local/types";
 
 const HIDE_ON = ["/login", "/offline"];
 
-// Both auth CTAs and the placeholder that stands in for them share one box, so
-// the bar is exactly as tall and the CTA exactly as wide before the auth state
-// resolves as after.
-const CTA_BOX = "h-8 min-w-24";
-
 /**
- * The tomato on its own — the app's mark with the squircle tile, its gradient
- * and its edge stroke dropped.
- *
  * The tile exists to sit on a dock or a home screen; inside the app it is a
  * rounded box in a UI with `--radius: 0rem`, on a background it already
  * matches. So the nav draws the line-art alone, inline and in `currentColor`,
@@ -102,20 +94,20 @@ export function NavBar() {
           means, so it goes red and belled rather than outlined and scanned:
           the inversion has to be legible at a glance, not just in the
           digits. */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <nav className="flex items-center gap-1 text-xs text-muted-foreground">
         {/* Signed-in-only controls: sign out, then the owner's avatar +
             motivation pickers, then the shared timer + profile links. */}
         {isAuthenticated && (
           <Button
-            size="icon"
+            size="sm"
             variant="outline"
-            aria-label={copy.header.signOut}
+            className="px-2 text-xs"
             onClick={async () => {
               await signOut().catch(() => {});
               window.location.href = "/";
             }}
           >
-            <LogOut size={15} />
+            {copy.header.signOut}
           </Button>
         )}
         {/* Motivation is always available — it only reads the local quotes
@@ -124,7 +116,7 @@ export function NavBar() {
         <MotivationButton />
         {isAuthenticated && isProfilePage && <PeepPicker />}
         {isProfilePage && (
-          <Button asChild size="sm" variant="outline">
+          <Button asChild size="sm" variant="outline" className="px-2 text-xs">
             <Link
               href="/app"
               className={
@@ -139,7 +131,7 @@ export function NavBar() {
                   >
                     +{faClock(now - ringing.endedAt)}
                   </span>
-                  <BellRing size={15} />
+                  <BellRing size={14} />
                 </>
               ) : remainingMs !== null ? (
                 <>
@@ -149,11 +141,11 @@ export function NavBar() {
                   >
                     {faClock(remainingMs)}
                   </span>
-                  <Scan size={15} className="text-rose-500 animate-pulse" />
+                  <Scan size={14} className="text-rose-500 animate-pulse" />
                 </>
               ) : (
                 <>
-                  <Timer size={15} />
+                  <Timer size={14} />
                   {copy.header.timer}
                 </>
               )}
@@ -163,10 +155,8 @@ export function NavBar() {
         {/* The leaderboard is a global ranking — reachable from the landing
             page. Hidden on profile pages to keep that nav focused. */}
         {!isProfilePage && (
-          <Button asChild size="icon" variant="outline" aria-label={copy.leaderboard?.title ?? "لیدربورد"}>
-            <Link href="/leaderboard">
-              <Trophy size={15} />
-            </Link>
+          <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+            <Link href="/leaderboard">{copy.leaderboard?.title ?? "لیدربورد"}</Link>
           </Button>
         )}
         {/* Signed in but the username hasn't arrived yet is still "loading":
@@ -174,24 +164,20 @@ export function NavBar() {
             to the timer once auth has settled, so a device that can't reach
             profiles.me is left with a working link rather than a pulse. */}
         {isLoading || (isAuthenticated && username === null && !settled) ? (
-          <Skeleton className={`${CTA_BOX} rounded-none`} />
+          <Skeleton className="h-7 w-16 rounded-none" />
         ) : isAuthenticated ? (
-          <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile}>
+          <Button asChild size="sm" variant="outline" className="px-2 text-xs">
             <Link href={username === null ? "/app" : `/u/${username}`}>
-              <User size={15} />
+              {username === null ? copy.header.timer : copy.header.myProfile}
             </Link>
           </Button>
         ) : (
           <>
-            <Button asChild size="icon" variant="outline" aria-label={copy.landing.enter}>
-              <Link href="/login">
-                <LogIn size={15} />
-              </Link>
+            <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+              <Link href="/login">{copy.landing.enter}</Link>
             </Button>
-            <Button asChild size="icon" variant="outline" aria-label={copy.header.myProfile}>
-              <Link href="/u/local">
-                <User size={15} />
-              </Link>
+            <Button asChild size="sm" variant="outline" className="px-2 text-xs">
+              <Link href="/u/local">{copy.header.myProfile}</Link>
             </Button>
           </>
         )}
