@@ -5,10 +5,10 @@
 // - /_next/static + icons: cache-first; the URLs are content-hashed or
 //   effectively immutable.
 // Bump VERSION to invalidate everything after breaking changes.
-const VERSION = "v2";
+const VERSION = "v3";
 const PAGES = `pomodorus-pages-${VERSION}`;
 const ASSETS = `pomodorus-assets-${VERSION}`;
-const PRECACHE = ["/", "/offline", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
+const PRECACHE = ["/", "/app", "/offline", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
