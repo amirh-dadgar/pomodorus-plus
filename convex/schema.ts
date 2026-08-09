@@ -98,6 +98,9 @@ export default defineSchema({
   leaderboard_cache: defineTable({
     username: v.string(),
     totalMs: v.number(),
+    todayMs: v.optional(v.number()),
+    weekMs: v.optional(v.number()),
+    monthMs: v.optional(v.number()),
     updatedAt: v.number(),
   }).index("by_username", ["username"]),
 });

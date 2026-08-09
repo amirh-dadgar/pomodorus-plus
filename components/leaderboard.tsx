@@ -7,17 +7,18 @@ import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 import { faDuration } from "@/lib/format";
 
-type Range = "today" | "week" | "all";
+type Range = "today" | "week" | "month" | "all";
 
 const RANGES: { key: Range; label: string }[] = [
   { key: "today", label: "امروز" },
   { key: "week", label: "این هفته" },
+  { key: "month", label: "این ماه" },
   { key: "all", label: "همه" },
 ];
 
 export function Leaderboard() {
   const [range, setRange] = useState<Range>("all");
-  const ranking = useQuery(api.leaderboard_cache.cachedRanking, { limit: 50 });
+  const ranking = useQuery(api.leaderboard_cache.cachedRanking, { range, limit: 50 });
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 pb-10">
