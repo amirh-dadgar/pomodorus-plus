@@ -11,7 +11,6 @@ import { MotivationButton } from "@/components/motivation-button";
 import { PeepPicker } from "@/components/peep-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/lib/copy";
-import { faClock } from "@/lib/format";
 import {
   useLocalIdentity,
   useLocalState,
@@ -115,40 +114,18 @@ export function NavBar() {
             picker stays account-only. */}
         <MotivationButton />
         {isAuthenticated && isProfilePage && <PeepPicker />}
+        {/* On the profile page the timer already runs in the background, so
+            the nav only needs a compact link back to the app — no live clock,
+            which would overflow the row on mobile. */}
         {isProfilePage && (
-          <Button asChild size="sm" variant="outline" className="px-2 text-xs sm:px-3 sm:text-sm">
+          <Button asChild size="icon" variant="outline" aria-label={copy.header.timer}>
             <Link
               href="/app"
               className={
                 ringing ? "text-rose-500 animate-pulse" : "hover:text-foreground"
               }
             >
-              {ringing ? (
-                <>
-                  <span
-                    className="w-10 flex justify-start font-mono tabular-nums"
-                    dir="ltr"
-                  >
-                    +{faClock(now - ringing.endedAt)}
-                  </span>
-                  <BellRing size={14} />
-                </>
-              ) : remainingMs !== null ? (
-                <>
-                  <span
-                    className="w-10 flex justify-start font-mono tabular-nums"
-                    dir="ltr"
-                  >
-                    {faClock(remainingMs)}
-                  </span>
-                  <Scan size={14} className="text-rose-500 animate-pulse" />
-                </>
-              ) : (
-                <>
-                  <Timer size={14} />
-                  {copy.header.timer}
-                </>
-              )}
+              {ringing ? <BellRing size={14} /> : remainingMs !== null ? <Scan size={14} className="text-rose-500 animate-pulse" /> : <Timer size={14} />}
             </Link>
           </Button>
         )}

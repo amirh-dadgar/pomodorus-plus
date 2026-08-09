@@ -218,13 +218,16 @@ export function Profile({
           the row does not grow under the page when auth resolves. */}
       <div className="flex h-8 items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          {/* Avatar is account-only (offline/local users never build one). */}
-          {!offline && savedPeepAlways ? (
+          {/* Avatar is account-only and only shown on the viewer's OWN
+              profile. savedPeepAlways comes from this device, so gating on
+              isOwner prevents leaking one user's avatar onto someone else's
+              profile (incl. after logout). */}
+          {isOwner && savedPeepAlways ? (
             <PeepAvatar
               selection={savedPeepAlways}
               className="size-20 shrink-0 overflow-hidden rounded-full border bg-[#f4f4f5]"
             />
-          ) : !offline ? (
+          ) : isOwner ? (
             <span className="size-20 shrink-0 rounded-full border bg-[#f4f4f5]" />
           ) : null}
           <div className="flex flex-col justify-center">
