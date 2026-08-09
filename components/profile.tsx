@@ -1,11 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { DayCard, useBanner } from "@/components/day-card";
 import { FocusChart } from "@/components/focus-chart";
 import { PeepAvatar, loadPeep } from "@/components/peep-picker";
+import { ShareCard } from "@/components/share-card";
 import { subscribePeep } from "@/lib/peep-store";
 import { type PeepSelection } from "@/lib/peeps-parts";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { focusHistory, type ChartPayload } from "@/lib/focus-history";
 import { localFocusHistory } from "@/lib/local-chart";
 import { useLocalState, useTimerNow } from "@/lib/local/hooks";
 import { faDigits } from "@/lib/format";
+import { toPng } from "html-to-image";
 
 const RANGES = [7, 30, 90] as const;
 type Range = (typeof RANGES)[number];
@@ -140,10 +142,30 @@ export function Profile({
       window.removeEventListener("peep:updated", sync);
     };
   }, []);
-  // Always-available avatar for the persistent header slot. Sourced only from
-  // the `peep` state (populated after mount), never read from localStorage
-  // during render, so SSR and the first client paint match.
   const savedPeepAlways = peep;
+  // Off-screen node captured by the "اسکرین شات" button. The live page is
+  // never mutated; only this hidden composite is rasterized and downloaded.
+  const shareRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState(false);
+  async function handleShare() {
+    if (!shareRef.current || sharing) return;
+    setSharing(true);
+    try {
+      const dataUrl = await toPng(shareRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+      });
+      const link = document.createElement("a");
+      link.download = `pomodorus-${username}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      // Ignore capture failures; the live page stays intact.
+    } finally {
+      setSharing(false);
+    }
+  }
   // Offline/local-first view: source the chart from LocalState, never touch
   // the server. The hooks below are still called unconditionally (rules of
   // hooks) but their results are only used in the online branch.
@@ -214,6 +236,19 @@ export function Profile({
             </span>
           </div>
         </div>
+        {/* The share button: captures the off-screen composite, never the live
+            page, so the profile header stays put. */}
+        {!offline && (
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={handleShare}
+            disabled={sharing}
+            aria-label={copy.profile.downloadAria}
+          >
+            {copy.profile.downloadAria}
+          </Button>
+        )}
       </div>
 
       {/* A gap above the chart so the header (avatar + controls) doesn't
@@ -291,6 +326,14 @@ export function Profile({
           )}
         </div>
       )}
+      {/* Off-screen share composition: captured by the screenshot button.
+          Kept out of the visible layout so the live profile is untouched. */}
+      <ShareCard
+        ref={shareRef}
+        username={username}
+        peep={offline ? null : savedPeepAlways}
+        day={view.state === "ready" ? (view.selected ?? null) : null}
+      />
     </main>
   );
 }
