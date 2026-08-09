@@ -8,13 +8,16 @@
  * @module
  */
 
+import type * as _test_fetch from "../_test_fetch.js";
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as categories from "../categories.js";
 import type * as chartData from "../chartData.js";
+import type * as crons from "../crons.js";
 import type * as days from "../days.js";
 import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
+import type * as leaderboard_cache from "../leaderboard_cache.js";
 import type * as migrations from "../migrations.js";
 import type * as profiles from "../profiles.js";
 import type * as sessions from "../sessions.js";
@@ -27,13 +30,16 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  _test_fetch: typeof _test_fetch;
   admin: typeof admin;
   auth: typeof auth;
   categories: typeof categories;
   chartData: typeof chartData;
+  crons: typeof crons;
   days: typeof days;
   http: typeof http;
   leaderboard: typeof leaderboard;
+  leaderboard_cache: typeof leaderboard_cache;
   migrations: typeof migrations;
   profiles: typeof profiles;
   sessions: typeof sessions;

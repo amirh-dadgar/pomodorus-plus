@@ -16,12 +16,12 @@ const RANGES: { key: Range; label: string }[] = [
 ];
 
 export function Leaderboard() {
-  const [range, setRange] = useState<Range>("today");
-  const ranking = useQuery(api.leaderboard.ranking, { range, limit: 50 });
+  const [range, setRange] = useState<Range>("all");
+  const ranking = useQuery(api.leaderboard_cache.cachedRanking, { limit: 50 });
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 pb-10">
-      <h1 className="mt-8 text-2xl font-bold">{copy.leaderboard?.title ?? "لیدربورد تمرکز"}</h1>
+      <h1 className="mt-8 text-2xl font-bold">{copy.leaderboard?.title ?? "لیدربورد"}</h1>
 
       <div className="mt-6 flex gap-2">
         {RANGES.map((r) => (

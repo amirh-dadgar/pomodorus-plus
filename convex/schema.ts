@@ -89,4 +89,15 @@ export default defineSchema({
     cycleCount: v.number(),
     lastActivityAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  // Cached leaderboard entries. A row is created the first time a user appears
+  // in the live presence feed (synced by the cron job `syncLeaderboard`), so
+  // anyone who has *ever* been on the timer stays ranked even after they go
+  // offline. The total focus time is refreshed from the session log when the
+  // row is (re)written.
+  leaderboard_cache: defineTable({
+    username: v.string(),
+    totalMs: v.number(),
+    updatedAt: v.number(),
+  }).index("by_username", ["username"]),
 });
