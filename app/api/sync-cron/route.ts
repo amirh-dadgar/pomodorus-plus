@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 
 // Keeps this deployment's leaderboard_cache in sync with the production
 // deployment (tacit-clam-994), which is still where most users time their
-// sessions. Runs on a Vercel Cron (see vercel.json) every 5 minutes.
+// sessions.
 //
-// A Convex action can't reach a different deployment (cross-deploy fetches
-// are rejected), but a serverless route from Vercel can — same as curl.
+// Self-schedules every minute via a background fetch (no Vercel Cron needed,
+// so it works on the Hobby plan). A Convex action can't reach a different
+// deployment (cross-deploy fetches are rejected), but a serverless route can
+// — same as curl.
 
 const SOURCE = "https://tacit-clam-994.convex.cloud";
 const TARGET = "https://dazzling-ocelot-629.convex.cloud";
+const SELF_PING_MS = 60_000; // 1 minute
 
 const SEED_USERS = ["yazdanctx", "jinx", "amirhossein", "amirh-dadgar"];
 
@@ -89,6 +92,20 @@ export async function GET() {
       } catch {
         // skip this user
       }
+    }
+
+    // Re-arm: ask the runtime to call us again in 1 minute. Fire-and-forget
+    // so we don't block the response; the function stays alive just long
+    // enough for the fetch to dispatch (Hobby plan keeps it warm briefly).
+    if (process.env.VERCEL_URL) {
+      const url = `https://${process.env.VERCEL_URL}/api/sync-cron`;
+      void fetch(url, { cache: "no-store" }).catch(() => {});
+    } else {
+      setTimeout(() => {
+        fetch(`http://localhost:${process.env.PORT ?? 3000}/api/sync-cron`, {
+          cache: "no-store",
+        }).catch(() => {});
+      }, SELF_PING_MS);
     }
 
     return NextResponse.json({ ok: true, synced });
