@@ -137,7 +137,7 @@ export function NavBar() {
                   >
                     +{faClock(now - ringing.endedAt)}
                   </span>
-                  <BellRing size={12} className="hidden sm:inline-block" />
+                  <BellRing size={12} className="text-rose-500 animate-pulse" />
                 </>
               ) : (
                 <>
@@ -147,7 +147,7 @@ export function NavBar() {
                   >
                     {faClock(remainingMs ?? 0)}
                   </span>
-                  <Scan size={12} className="hidden text-rose-500 animate-pulse sm:inline-block" />
+                  <Scan size={12} className="text-rose-500 animate-pulse" />
                 </>
               )}
             </Link>
