@@ -116,10 +116,12 @@ export function NavBar() {
             picker stays account-only. */}
         <MotivationButton className="px-1.5 text-[10px] sm:px-3 sm:text-sm" />
         {isAuthenticated && isProfilePage && <PeepPicker className="px-1.5 text-[10px] sm:px-3 sm:text-sm" />}
-        {/* On the profile page the timer already runs in the background, so
-            the nav only needs a compact link back to the app — no live clock,
-            which would overflow the row on mobile. */}
-        {isProfilePage && (
+        {/* On the profile page the timer already runs in the background.
+            When a session is running/ringing we show a live mini-timer here
+            too (mobile and desktop) so the countdown is always visible without
+            opening /app. The icon is dropped on mobile to keep the row tight;
+            desktop keeps the icon+scan/bell like the landing nav. */}
+        {isProfilePage && (running || ringing) ? (
           <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
             <Link
               href="/app"
@@ -127,11 +129,40 @@ export function NavBar() {
                 ringing ? "text-rose-500 animate-pulse" : "hover:text-foreground"
               }
             >
-              <Timer size={12} />
+              {ringing ? (
+                <>
+                  <span
+                    className="w-9 flex justify-start font-mono tabular-nums"
+                    dir="ltr"
+                  >
+                    +{faClock(now - ringing.endedAt)}
+                  </span>
+                  <BellRing size={12} className="hidden sm:inline-block" />
+                </>
+              ) : (
+                <>
+                  <span
+                    className="w-9 flex justify-start font-mono tabular-nums"
+                    dir="ltr"
+                  >
+                    {faClock(remainingMs ?? 0)}
+                  </span>
+                  <Scan size={12} className="hidden text-rose-500 animate-pulse sm:inline-block" />
+                </>
+              )}
+            </Link>
+          </Button>
+        ) : isProfilePage ? (
+          <Button asChild size="sm" variant="outline" className="px-1.5 text-[10px] sm:px-3 sm:text-sm">
+            <Link
+              href="/app"
+              className="hover:text-foreground"
+            >
+              <Timer size={12} className="hidden sm:inline-block" />
               {copy.header.timer}
             </Link>
           </Button>
-        )}
+        ) : null}
         {/* On the landing page the timer isn't visible elsewhere, so when a
             session is running (or ringing — the work just ended and the break
             is owed) we show a live mini-timer in the nav. On /app the timer is

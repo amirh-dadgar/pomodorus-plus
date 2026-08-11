@@ -201,7 +201,7 @@ export function PeepPicker({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className={`text-muted-foreground ${className ?? ""}`}>
-          <User />
+          <User className="hidden sm:inline-block" />
           {copy.timer.peep ?? "آواتار"}
         </Button>
       </DialogTrigger>
