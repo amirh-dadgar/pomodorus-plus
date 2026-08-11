@@ -169,19 +169,21 @@ export function setIdentity(username: string) {
   const previous = loadIdentity();
   if (previous === username) return;
   const target = stateKey(username);
-  if (previous === null) {
-    const orphaned = readBlob(ANON_KEY);
-    if (orphaned !== null) {
-      const claimed = claimOrphaned(readBlob(target), orphaned);
-      // Only forget the anonymous blob once its contents are rehoused; if
-      // either step fails the work stays where it is, unclaimed but intact,
-      // which is the failure this whole path exists to prefer.
-      if (writeBlob(target, claimed)) {
-        try {
-          window.localStorage.removeItem(ANON_KEY);
-        } catch {
-          // Nothing reads it again once an identity is known; harmless.
-        }
+  // The anonymous blob holds sessions timed *before* any sign-in on this
+  // device. Whatever account the user signs into next owns that work — not
+  // just the first one (the old `previous === null` guard left it orphaned
+  // whenever a second account signed in). So we always claim it, if present.
+  const orphaned = readBlob(ANON_KEY);
+  if (orphaned !== null) {
+    const claimed = claimOrphaned(readBlob(target), orphaned);
+    // Only forget the anonymous blob once its contents are rehoused; if
+    // either step fails the work stays where it is, unclaimed but intact,
+    // which is the failure this whole path exists to prefer.
+    if (writeBlob(target, claimed)) {
+      try {
+        window.localStorage.removeItem(ANON_KEY);
+      } catch {
+        // Nothing reads it again once an identity is known; harmless.
       }
     }
   }
