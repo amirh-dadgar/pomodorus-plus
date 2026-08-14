@@ -91,6 +91,7 @@ export function Landing() {
           >
             {copy.about.bugLink}
           </a>
+          .
         </footer>
 
         <div className="h-0.5 bg-linear-to-r from-transparent via-border to-transparent" />
