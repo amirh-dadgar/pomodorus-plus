@@ -83,6 +83,14 @@ export function Landing() {
             {copy.about.yazdan}
           </a>
           {copy.about.tail}
+          <a
+            href={copy.about.bugUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-yellow-600 hover:underline"
+          >
+            {copy.about.bugLink}
+          </a>
         </footer>
 
         <div className="h-0.5 bg-linear-to-r from-transparent via-border to-transparent" />
